@@ -1,0 +1,214 @@
+<?php
+
+namespace App\Livewire\Admin\Agreements;
+
+use App\Enums\AgreementPaymentType;
+use App\Models\Agreement;
+use App\Services\AgreementService;
+use App\Support\Money;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+
+#[Layout('layouts.admin')]
+class AgreementEdit extends Component
+{
+    use WithFileUploads;
+
+    public Agreement $agreement;
+
+    public string $title = '';
+
+    public string $client_name = '';
+
+    public string $client_email = '';
+
+    public ?string $client_mobile = null;
+
+    public string $content = '';
+
+    public ?string $validity_date = null;
+
+    public string $payment_type = 'none';
+
+    // Full payment
+    public string $full_title = '';
+
+    public string $full_amount = '';
+
+    // Milestone payment
+    public array $milestones = [];
+
+    // Subscription payment
+    public string $subscription_title = '';
+
+    public string $subscription_amount = '';
+
+    public string $subscription_frequency = 'monthly';
+
+    public function mount(Agreement $agreement): void
+    {
+        $version = $agreement->currentVersion ?? $agreement->versions()->latest('id')->first();
+
+        abort_unless($version, 404);
+
+        $this->agreement = $agreement;
+        $this->title = $version->title;
+        $this->client_name = $version->client_name;
+        $this->client_email = $version->client_email;
+        $this->client_mobile = $version->client_mobile;
+        $this->content = $version->content;
+        $this->validity_date = $version->validity_date?->format('Y-m-d');
+        $this->payment_type = $agreement->payment_type->value;
+
+        $config = $version->payment_config ?? [];
+
+        if ($agreement->payment_type === AgreementPaymentType::Full) {
+            $this->full_title = $config['title'] ?? $agreement->title;
+            $this->full_amount = Money::fromPence($config['amount_pence'] ?? 0);
+        }
+
+        if ($agreement->payment_type === AgreementPaymentType::Milestone) {
+            $this->milestones = collect($config['milestones'] ?? [])->map(fn ($m) => [
+                'title' => $m['title'],
+                'description' => $m['description'] ?? '',
+                'amount' => Money::fromPence($m['amount_pence'] ?? 0),
+            ])->values()->all();
+
+            if (empty($this->milestones)) {
+                $this->addMilestone();
+            }
+        }
+
+        if ($agreement->payment_type === AgreementPaymentType::Subscription) {
+            $this->subscription_title = $config['title'] ?? $agreement->title;
+            $this->subscription_amount = Money::fromPence($config['amount_pence'] ?? 0);
+            $this->subscription_frequency = $config['frequency'] ?? 'monthly';
+        }
+    }
+
+    public function addMilestone(): void
+    {
+        $this->milestones[] = ['title' => '', 'description' => '', 'amount' => ''];
+    }
+
+    public function removeMilestone(int $index): void
+    {
+        unset($this->milestones[$index]);
+        $this->milestones = array_values($this->milestones);
+    }
+
+    public function rules(): array
+    {
+        $rules = [
+            'title' => ['required', 'string', 'max:255'],
+            'client_name' => ['required', 'string', 'max:255'],
+            'client_email' => ['required', 'email', 'max:255'],
+            'client_mobile' => ['nullable', 'string', 'max:30'],
+            'content' => ['required', 'string'],
+            'validity_date' => ['nullable', 'date'],
+        ];
+
+        if ($this->payment_type === AgreementPaymentType::Full->value) {
+            $rules['full_title'] = ['required', 'string', 'max:255'];
+            $rules['full_amount'] = ['required', 'numeric', 'gt:0', 'max:99999999'];
+        }
+
+        if ($this->payment_type === AgreementPaymentType::Milestone->value) {
+            $rules['milestones'] = ['required', 'array', 'min:1'];
+            $rules['milestones.*.title'] = ['required', 'string', 'max:255'];
+            $rules['milestones.*.amount'] = ['required', 'numeric', 'gt:0', 'max:99999999'];
+        }
+
+        if ($this->payment_type === AgreementPaymentType::Subscription->value) {
+            $rules['subscription_title'] = ['required', 'string', 'max:255'];
+            $rules['subscription_amount'] = ['required', 'numeric', 'gt:0', 'max:99999999'];
+            $rules['subscription_frequency'] = ['required', 'in:monthly,yearly'];
+        }
+
+        return $rules;
+    }
+
+    public function save(AgreementService $service): void
+    {
+        $this->validate();
+
+        $data = $this->buildData();
+
+        if ($this->agreement->hasSignature()) {
+            $version = $service->createNewVersion($this->agreement, $data, auth('admin')->user());
+
+            $this->dispatch('toast', message: "New version V{$version->version} created and sent to the client. The signed version is unchanged.", type: 'success');
+        } else {
+            // Unsigned — edit the current (pending) version in place.
+            $version = $this->agreement->versions()->latest('id')->first();
+
+            $version->update([
+                'title' => $data['title'],
+                'client_name' => $data['client_name'],
+                'client_email' => $data['client_email'],
+                'client_mobile' => $data['client_mobile'] ?? null,
+                'validity_date' => $data['validity_date'] ?? null,
+                'content' => $data['content'],
+                'payment_config' => $service->buildPaymentConfig($this->agreement->payment_type, $data),
+            ]);
+
+            $this->agreement->update([
+                'title' => $data['title'],
+                'client_name' => $data['client_name'],
+                'client_email' => $data['client_email'],
+                'client_mobile' => $data['client_mobile'] ?? null,
+                'validity_date' => $data['validity_date'] ?? null,
+            ]);
+
+            $service->syncMilestonesForVersion($this->agreement, $version, $version->payment_config);
+
+            $service->logEdit($this->agreement, auth('admin')->user());
+
+            $this->dispatch('toast', message: 'Agreement updated.', type: 'success');
+        }
+
+        $this->redirect(route('admin.agreements.show', $this->agreement), navigate: true);
+    }
+
+    private function buildData(): array
+    {
+        $data = [
+            'title' => $this->title,
+            'client_name' => $this->client_name,
+            'client_email' => $this->client_email,
+            'client_mobile' => $this->client_mobile,
+            'content' => $this->content,
+            'validity_date' => $this->validity_date,
+            'payment_type' => $this->payment_type,
+        ];
+
+        if ($this->payment_type === AgreementPaymentType::Full->value) {
+            $data['full_title'] = $this->full_title;
+            $data['full_amount_pence'] = Money::toPence($this->full_amount);
+        }
+
+        if ($this->payment_type === AgreementPaymentType::Milestone->value) {
+            $data['milestones'] = collect($this->milestones)->map(fn ($m) => [
+                'title' => $m['title'],
+                'description' => $m['description'] ?? null,
+                'amount_pence' => Money::toPence($m['amount']),
+            ])->all();
+        }
+
+        if ($this->payment_type === AgreementPaymentType::Subscription->value) {
+            $data['subscription_title'] = $this->subscription_title;
+            $data['subscription_amount_pence'] = Money::toPence($this->subscription_amount);
+            $data['subscription_frequency'] = $this->subscription_frequency;
+        }
+
+        return $data;
+    }
+
+    public function render()
+    {
+        return view('livewire.admin.agreements.agreement-edit', [
+            'isSigned' => $this->agreement->hasSignature(),
+        ])->title('Edit '.$this->agreement->agreement_number);
+    }
+}

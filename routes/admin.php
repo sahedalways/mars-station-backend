@@ -1,0 +1,48 @@
+<?php
+
+use App\Http\Middleware\AdminAuthenticated;
+use App\Http\Middleware\AdminGuest;
+use App\Livewire\Admin\Agreements\AgreementEdit;
+use App\Livewire\Admin\Agreements\AgreementIndex;
+use App\Livewire\Admin\Agreements\AgreementShow;
+use App\Livewire\Admin\Auth\LoginEmail;
+use App\Livewire\Admin\Auth\LoginVerify;
+use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\Payments\PaymentHistory;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('admin')->group(function () {
+    Route::middleware(['web', AdminGuest::class])->group(function () {
+        Route::get('login', LoginEmail::class)->name('admin.login');
+        Route::get('login/verify', LoginVerify::class)->name('admin.login.verify');
+    });
+
+    Route::middleware(['web', AdminAuthenticated::class])->group(function () {
+        Route::get('/', Dashboard::class)->name('admin.dashboard');
+
+        Route::prefix('agreements')->group(function () {
+            Route::get('/', AgreementIndex::class)->name('admin.agreements.index');
+            Route::get('{agreement}/edit', AgreementEdit::class)->name('admin.agreements.edit');
+            Route::get('{agreement}', AgreementShow::class)->name('admin.agreements.show');
+        });
+
+        Route::get('payments', PaymentHistory::class)->name('admin.payments.index');
+
+        Route::get('attachments/{attachment}/download', [\App\Http\Controllers\AttachmentController::class, 'download'])
+            ->name('admin.attachments.download');
+
+        Route::get('get-services', \App\Livewire\Admin\GetServices\GetServiceIndex::class)->name('admin.get-services.index');
+        Route::get('services', \App\Livewire\Admin\Services\ServiceIndex::class)->name('admin.services.index');
+        Route::get('reviews', \App\Livewire\Admin\Reviews\ReviewIndex::class)->name('admin.reviews.index');
+        Route::get('complaints', \App\Livewire\Admin\Complaints\ComplaintIndex::class)->name('admin.complaints.index');
+        Route::get('queries', \App\Livewire\Admin\Queries\QueryIndex::class)->name('admin.queries.index');
+    });
+
+    Route::post('logout', function () {
+        auth('admin')->logout();
+        session()->invalidate();
+        session()->regenerateToken();
+
+        return redirect()->route('admin.login');
+    })->middleware('web')->name('admin.logout');
+});
