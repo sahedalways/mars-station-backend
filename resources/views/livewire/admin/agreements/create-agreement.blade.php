@@ -265,6 +265,8 @@
                         @error('validity_date') <p class="mt-1.5 text-xs text-red-400">{{ $message }}</p> @enderror
                     </div>
 
+
+
                     {{-- Attachment --}}
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-slate-300">

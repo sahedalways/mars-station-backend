@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Mail;
+
+use App\Models\Agreement;
+use App\Models\AgreementLink;
+use App\Models\PaymentRefund;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+
+class PaymentRefundedMail extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    public function __construct(
+        public Agreement $agreement,
+        public PaymentRefund $refund,
+        public AgreementLink $link,
+    ) {}
+
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: "Payment Refunded — {$this->agreement->title}",
+        );
+    }
+
+    public function content(): Content
+    {
+        return new Content(
+            view: 'mail.payment-refunded',
+            with: [
+                'agreement' => $this->agreement,
+                'refund' => $this->refund,
+                'link' => $this->link,
+            ],
+        );
+    }
+}

@@ -22,7 +22,7 @@ class QueryAttachment extends Model
         'size_bytes' => 'integer',
     ];
 
-    public function query()
+    public function relatedQuery()
     {
         return $this->belongsTo(Query::class);
     }

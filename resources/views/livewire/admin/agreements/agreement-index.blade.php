@@ -175,7 +175,7 @@
                                                         Restore
                                                     </button>
                                                     <div class="mx-3 my-1 border-t border-purple-500/10"></div>
-                                                    <button type="button" wire:click="deletePermanently({{ $agreement->id }})" wire:confirm="Permanently delete this agreement? This cannot be undone." class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-400 transition hover:bg-red-500/10 hover:text-red-300">
+                                                    <button type="button" wire:click="openDeleteModal({{ $agreement->id }})" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-400 transition hover:bg-red-500/10 hover:text-red-300">
                                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
                                                         Delete Permanently
                                                     </button>
@@ -222,6 +222,19 @@
         <x-slot:footer>
             <x-button type="button" variant="secondary" wire:click="closeModal('showArchiveModal')">Cancel</x-button>
             <x-button type="button" variant="danger" wire:click="archiveAgreement" wire:loading.attr="disabled" wire:target="archiveAgreement">Archive Agreement</x-button>
+        </x-slot:footer>
+    </x-modal>
+
+    <x-modal :show="'showDeleteModal'" max-width="sm">
+        <x-slot:title>Delete Agreement Permanently</x-slot:title>
+        <div class="space-y-3">
+            <p class="text-sm text-slate-400">
+                This agreement will be permanently removed from the system including all versions, payments, milestones, logs and associated files. This action is <span class="font-bold text-red-400">irreversible</span>.
+            </p>
+        </div>
+        <x-slot:footer>
+            <x-button type="button" variant="secondary" wire:click="closeModal('showDeleteModal')">Cancel</x-button>
+            <x-button type="button" variant="danger" wire:click="deletePermanently" wire:loading.attr="disabled" wire:target="deletePermanently">Delete Permanently</x-button>
         </x-slot:footer>
     </x-modal>
 </div>

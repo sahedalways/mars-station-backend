@@ -4,23 +4,34 @@ namespace App\Services;
 
 use App\Models\Agreement;
 use App\Models\AgreementVersion;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Spatie\Browsershot\Browsershot;
 
 class PdfService
 {
-    public function renderAgreementPdf(Agreement $agreement, AgreementVersion $version): \Barryvdh\DomPDF\PDF
+    private string $chromePath = '/usr/bin/google-chrome-stable';
+    private string $nodePath = '/home/sahed-ahmed/.nvm/versions/node/v24.19.0/bin/node';
+
+    public function renderAgreementPdf(Agreement $agreement, AgreementVersion $version): string
     {
-        return Pdf::loadView('pdf.agreement', [
+        $html = view('pdf.agreement-browser', [
             'agreement' => $agreement,
             'version' => $version,
-        ])->setPaper('a4');
+        ])->render();
+
+        return Browsershot::html($html)
+            ->setChromePath($this->chromePath)
+            ->setNodeBinary($this->nodePath)
+            ->width(794)
+            ->height(1123)
+            ->margins(0, 0, 0, 0)
+            ->pdf();
     }
 
     public function storeSignedPdf(Agreement $agreement, AgreementVersion $version): string
     {
-        $pdf = $this->renderAgreementPdf($agreement, $version);
+        $pdfContent = $this->renderAgreementPdf($agreement, $version);
 
         $path = 'agreements/pdf/'
             .$agreement->agreement_number
@@ -28,15 +39,17 @@ class PdfService
             .'-'.Str::lower(Str::random(8))
             .'.pdf';
 
-        Storage::disk('local')->put($path, $pdf->output());
+        Storage::disk('local')->put($path, $pdfContent);
 
         return $path;
     }
 
     public function downloadAgreementPdf(Agreement $agreement, AgreementVersion $version)
     {
+        $pdfContent = $this->renderAgreementPdf($agreement, $version);
+
         return response()->streamDownload(
-            fn () => print($this->renderAgreementPdf($agreement, $version)->output()),
+            fn () => print($pdfContent),
             $agreement->agreement_number.'-V'.$version->version.'.pdf',
             ['Content-Type' => 'application/pdf']
         );

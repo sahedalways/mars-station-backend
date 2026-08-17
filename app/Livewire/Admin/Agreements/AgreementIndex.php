@@ -49,6 +49,10 @@ class AgreementIndex extends Component
 
     public int $archiveTargetId = 0;
 
+    public bool $showDeleteModal = false;
+
+    public int $deleteTargetId = 0;
+
     public function closeModal(string $property): void
     {
         $this->$property = false;
@@ -139,10 +143,18 @@ class AgreementIndex extends Component
         $this->dispatch('toast', message: 'Agreement restored.', type: 'success');
     }
 
-    public function deletePermanently(int $agreementId, AgreementService $service): void
+    public function openDeleteModal(int $agreementId): void
     {
-        $agreement = Agreement::withTrashed()->findOrFail($agreementId);
+        $this->deleteTargetId = $agreementId;
+        $this->showDeleteModal = true;
+    }
+
+    public function deletePermanently(AgreementService $service): void
+    {
+        $agreement = Agreement::withTrashed()->findOrFail($this->deleteTargetId);
         $service->deletePermanently($agreement, auth('admin')->user());
+
+        $this->showDeleteModal = false;
 
         $this->dispatch('toast', message: 'Agreement permanently deleted.', type: 'success');
     }

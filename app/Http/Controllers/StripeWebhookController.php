@@ -6,13 +6,21 @@ use App\Enums\AgreementStatus;
 use App\Enums\MilestoneStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
+use App\Mail\PaymentFailedMail;
+use App\Mail\PaymentRefundedMail;
+use App\Mail\PaymentSuccessMail;
+use App\Mail\SubscribeCancelledMail;
+use App\Mail\SubscribeStartedMail;
 use App\Models\Agreement;
 use App\Models\AgreementMilestone;
 use App\Models\AgreementSubscription;
 use App\Models\Payment;
 use App\Models\PaymentEvent;
+use App\Models\PaymentRefund;
 use App\Services\ActivityLogService;
+use App\Services\EmailService;
 use App\Services\StripeService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -161,6 +169,17 @@ class StripeWebhookController extends Controller
         }
 
         $this->markAgreementActive($agreement, $logs);
+
+        $link = $agreement->activeLink;
+
+        if ($link) {
+            app(EmailService::class)->send(
+                new SubscribeStartedMail($record, $link),
+                $agreement->client_email,
+                'subscription.started',
+                $agreement
+            );
+        }
     }
 
     private function handlePaymentIntentSucceeded($event): void
@@ -189,12 +208,27 @@ class StripeWebhookController extends Controller
     {
         $intent = $event->data->object;
 
-        Payment::where('stripe_payment_intent_id', $intent->id)
+        $payment = Payment::where('stripe_payment_intent_id', $intent->id)
             ->where('status', '!=', PaymentStatus::Succeeded->value)
-            ->update([
-                'status' => PaymentStatus::Failed,
-                'failed_at' => now(),
-            ]);
+            ->first();
+
+        $payment?->update([
+            'status' => PaymentStatus::Failed,
+            'failed_at' => now(),
+        ]);
+
+        if ($payment) {
+            $link = $payment->agreement->activeLink;
+
+            if ($link) {
+                app(EmailService::class)->send(
+                    new PaymentFailedMail($payment->agreement, $payment, $link),
+                    $payment->agreement->client_email,
+                    'payment.failed',
+                    $payment->agreement
+                );
+            }
+        }
     }
 
     private function handleInvoicePaid($event, ActivityLogService $logs): void
@@ -262,10 +296,10 @@ class StripeWebhookController extends Controller
             'status' => $stripeSubscription->status,
             'cancel_at_period_end' => (bool) ($stripeSubscription->cancel_at_period_end ?? false),
             'current_period_start' => isset($stripeSubscription->current_period_start)
-                ? \Carbon\Carbon::createFromTimestamp($stripeSubscription->current_period_start)
+                ? Carbon::createFromTimestamp($stripeSubscription->current_period_start)
                 : $record->current_period_start,
             'current_period_end' => isset($stripeSubscription->current_period_end)
-                ? \Carbon\Carbon::createFromTimestamp($stripeSubscription->current_period_end)
+                ? Carbon::createFromTimestamp($stripeSubscription->current_period_end)
                 : $record->current_period_end,
         ]);
     }
@@ -274,11 +308,24 @@ class StripeWebhookController extends Controller
     {
         $stripeSubscription = $event->data->object;
 
+        $record = AgreementSubscription::where('stripe_subscription_id', $stripeSubscription->id)->first();
         AgreementSubscription::where('stripe_subscription_id', $stripeSubscription->id)
             ->update([
                 'status' => 'canceled',
                 'ended_at' => now(),
             ]);
+        if ($record) {
+            $link = $record->agreement->activeLink;
+
+            if ($link) {
+                app(EmailService::class)->send(
+                    new SubscribeCancelledMail($record, $record->agreement, $link),
+                    $record->agreement->client_email,
+                    'subscription.cancelled',
+                    $record->agreement
+                );
+            }
+        }
     }
 
     private function handleChargeRefunded($event): void
@@ -302,7 +349,7 @@ class StripeWebhookController extends Controller
         foreach ($charge->refunds->data as $refund) {
             $refundedPence += (int) ($refund->amount ?? 0);
 
-            \App\Models\PaymentRefund::create([
+            PaymentRefund::create([
                 'payment_id' => $payment->id,
                 'stripe_refund_id' => $refund->id,
                 'amount_pence' => (int) ($refund->amount ?? 0),
@@ -317,6 +364,18 @@ class StripeWebhookController extends Controller
             'refunded_amount_pence' => $refundedPence,
             'status' => $refundedPence >= $payment->amount_pence ? PaymentStatus::Refunded : PaymentStatus::PartiallyRefunded,
         ]);
+
+        $latestRefund = $payment->refunds()->latest('id')->first();
+        $link = $payment->agreement->activeLink;
+
+        if ($latestRefund && $link) {
+            app(EmailService::class)->send(
+                new PaymentRefundedMail($payment->agreement, $latestRefund, $link),
+                $payment->agreement->client_email,
+                'payment.refunded',
+                $payment->agreement
+            );
+        }
     }
 
     private function applySuccess(Payment $payment, ?Agreement $agreement, string $paymentType, ?int $milestoneId, ?ActivityLogService $logs = null): void
@@ -348,6 +407,17 @@ class StripeWebhookController extends Controller
             'amount_pence' => $payment->amount_pence,
             'type' => $paymentType,
         ]);
+
+        $link = $agreement->activeLink;
+
+        if ($link) {
+            app(EmailService::class)->send(
+                new PaymentSuccessMail($agreement, $payment, $link),
+                $agreement->client_email,
+                'payment.succeeded',
+                $agreement
+            );
+        }
     }
 
     private function markAgreementActive(Agreement $agreement, ActivityLogService $logs): void

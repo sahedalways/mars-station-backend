@@ -440,9 +440,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
-                        <h2 class="text-base font-bold text-white">Agreement Preview <span class="text-xs font-medium text-purple-400">(V1)</span></h2>
+                        <h2 class="text-base font-bold text-white">Agreement Preview</h2>
                         <span class="text-xs text-slate-500">
-                            ({{ $agreement->currentVersion ? 'V' . $agreement->currentVersion->version : 'No version' }})
+                            {{ $agreement->currentVersion ? '(V' . $agreement->currentVersion->version . ')' : '(No version)' }}
                         </span>
                     </div>
                     <button type="button" wire:click="downloadPdf"
@@ -453,46 +453,197 @@
                 </div>
 
                 {{-- Preview content --}}
-                <div class="max-h-[320px] overflow-y-auto rounded-xl border border-purple-500/15 bg-white p-8 text-slate-900 scrollbar-thin">
+                <div class="rounded-xl border border-purple-500/15 bg-white" id="agreement-preview-wrap" style="max-height: 520px; overflow-y: auto;">
+                    <style>
+                        #agreement-preview-wrap .doc-wrapper {
+                            max-width: 100%;
+                            margin: 0;
+                            background: #ffffff;
+                            border-radius: 0;
+                            overflow: hidden;
+                            border: none;
+                            box-shadow: none;
+                            position: relative;
+                            border-top: 3px solid #7c3aed;
+                        }
+                        #agreement-preview-wrap .doc-wrapper::before {
+                            content: '';
+                            position: absolute;
+                            top: 18%;
+                            right: 2%;
+                            transform: none;
+                            width: 360px;
+                            height: 360px;
+                            background: url('{{ asset('watermark-logo.png') }}') no-repeat center center;
+                            background-size: contain;
+                            opacity: 0.04;
+                            pointer-events: none;
+                            z-index: 1;
+                        }
+                        #agreement-preview-wrap .doc-wrapper > * { position: relative; z-index: 2; }
+                        #agreement-preview-wrap .pw-header {
+                            padding: 22px 28px 20px;
+                            border-bottom: 3px solid #4c1d95;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 16px;
+                            background: linear-gradient(180deg, #f9f7ff 0%, #ffffff 100%);
+                        }
+                        #agreement-preview-wrap .pw-brand img { display: block; max-width: 280px; height: auto; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05)); }
+                        #agreement-preview-wrap .pw-meta {
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 10px 18px;
+                            min-width: 280px;
+                            max-width: 380px;
+                        }
+                        #agreement-preview-wrap .pw-meta-row { display: flex; gap: 10px; align-items: flex-start; }
+                        #agreement-preview-wrap .pw-meta-icon {
+                            width: 28px; height: 28px; background: linear-gradient(135deg, #ede9fe, #ddd6fe); border-radius: 8px;
+                            display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #4c1d95;
+                            box-shadow: 0 1px 3px rgba(76,29,149,0.1);
+                        }
+                        #agreement-preview-wrap .pw-meta-icon svg { width: 13px; height: 13px; }
+                        #agreement-preview-wrap .pw-meta-label { font-size: 9px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
+                        #agreement-preview-wrap .pw-meta-value { font-size: 11px; color: #111827; font-weight: 600; }
+                        #agreement-preview-wrap .pw-status {
+                            display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px;
+                            font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+                        }
+                        #agreement-preview-wrap .pw-status-signed { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534; border: 1px solid #86efac; box-shadow: 0 1px 3px rgba(22,101,52,0.1); }
+                        #agreement-preview-wrap .pw-status-pending { background: linear-gradient(135deg, #fef9c3, #fde68a); color: #854d0e; border: 1px solid #fcd34d; box-shadow: 0 1px 3px rgba(133,77,14,0.1); }
+                        #agreement-preview-wrap .pw-status-expired { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; border: 1px solid #fca5a5; box-shadow: 0 1px 3px rgba(153,27,27,0.1); }
+                        #agreement-preview-wrap .pw-status-default { background: linear-gradient(135deg, #f3f4f6, #e5e7eb); color: #374151; border: 1px solid #d1d5db; }
+                        #agreement-preview-wrap .pw-body { padding: 24px 28px 0; }
+                        #agreement-preview-wrap .pw-section-label {
+                            font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #4c1d95;
+                            font-weight: 800; border-left: 4px solid #4c1d95; padding-left: 12px;
+                            margin: 24px 0 12px; font-family: 'Inter', sans-serif;
+                        }
+                        #agreement-preview-wrap .pw-intro { font-size: 11px; line-height: 1.75; color: #374151; margin: 0 0 6px; }
+                        #agreement-preview-wrap .pw-sub-intro { font-size: 10px; color: #6b7280; font-style: italic; margin: 0 0 16px; }
+                        #agreement-preview-wrap .pw-block { margin-bottom: 16px; }
+                        #agreement-preview-wrap .pw-block h3 { font-size: 11px; color: #4c1d95; font-weight: 800; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.3px; }
+                        #agreement-preview-wrap .pw-block h3 .num {
+                            display: inline-flex; align-items: center; justify-content: center;
+                            width: 22px; height: 22px; background: linear-gradient(135deg, #7c3aed, #4c1d95); color: #fff;
+                            border-radius: 50%; font-size: 9px; font-weight: 800;
+                            box-shadow: 0 2px 6px rgba(76,29,149,0.25);
+                        }
+                        #agreement-preview-wrap .pw-block p { font-size: 11px; line-height: 1.65; color: #374151; margin: 0 0 4px; }
+                        #agreement-preview-wrap .pw-acceptance {
+                            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #f5f3ff 100%);
+                            border: 2px solid #c4b5fd; border-radius: 14px; padding: 22px 26px;
+                            margin: 24px 28px 0; display: flex; gap: 20px; align-items: flex-start;
+                            box-shadow: 0 4px 16px rgba(76,29,149,0.08), inset 0 2px 12px rgba(76,29,149,0.04);
+                            position: relative; overflow: hidden;
+                        }
+                        #agreement-preview-wrap .pw-acceptance::before {
+                            content: '';
+                            position: absolute;
+                            top: 50%;
+                            right: 16px;
+                            transform: translateY(-50%);
+                            width: 160px; height: 160px;
+                            background: url('{{ asset('watermark-logo.png') }}') no-repeat center center;
+                            background-size: contain;
+                            opacity: 0.07; pointer-events: none;
+                        }
+                        #agreement-preview-wrap .pw-acceptance > * { position: relative; z-index: 1; }
+                        #agreement-preview-wrap .pw-acceptance-icon {
+                            width: 44px; height: 44px; background: linear-gradient(135deg, #7c3aed, #4c1d95);
+                            border: none; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+                            flex-shrink: 0; color: #fff; box-shadow: 0 4px 12px rgba(76,29,149,0.25);
+                        }
+                        #agreement-preview-wrap .pw-acceptance-icon svg { width: 20px; height: 20px; }
+                        #agreement-preview-wrap .pw-acceptance h4 { font-size: 12px; color: #1e1b4b; margin: 0 0 10px; font-weight: 800; letter-spacing: 0.5px; }
+                        #agreement-preview-wrap .pw-sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; }
+                        #agreement-preview-wrap .pw-sig-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; margin-bottom: 2px; }
+                        #agreement-preview-wrap .pw-sig-value { font-size: 11px; color: #111827; font-weight: 600; }
+                        #agreement-preview-wrap .pw-sig-note {
+                            margin-top: 14px; padding-top: 12px; border-top: 1px dashed #c4b5fd;
+                            font-size: 10px; color: #4c1d95; font-weight: 600;
+                            display: flex; align-items: center; gap: 6px;
+                        }
+                        #agreement-preview-wrap .pw-footer {
+                            background: linear-gradient(180deg, #1e1b4b 0%, #0f0524 100%); color: #fff; padding: 0; margin-top: 28px;
+                            position: relative; overflow: hidden; border-radius: 0 0 0 0;
+                        }
+                        #agreement-preview-wrap .pw-footer::before {
+                            content: '';
+                            position: absolute;
+                            top: -30px; right: -30px;
+                            width: 160px; height: 160px;
+                            background: url('{{ asset('watermark-logo.png') }}') no-repeat center center;
+                            background-size: contain;
+                            opacity: 0.04; pointer-events: none;
+                        }
+                        #agreement-preview-wrap .pw-footer > * { position: relative; z-index: 1; }
+                        #agreement-preview-wrap .pw-footer-inner { padding: 28px 28px 0; }
+                        #agreement-preview-wrap .pw-footer-logo { text-align: center; margin-bottom: 18px; }
+                        #agreement-preview-wrap .pw-footer-logo img { height: 38px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; }
+                        #agreement-preview-wrap .pw-footer-divider {
+                            height: 1px; margin: 0 0 16px;
+                            background: linear-gradient(90deg, transparent, rgba(167,139,250,0.25), transparent);
+                        }
+                        #agreement-preview-wrap .pw-footer-strip {
+                            display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+                            font-size: 9.5px; color: #c4b5fd;
+                        }
+                        #agreement-preview-wrap .pw-footer-strip strong { color: #e9d5ff; font-weight: 700; }
+                        #agreement-preview-wrap .pw-footer-disclaimer {
+                            margin-top: 16px; padding: 12px 16px;
+                            background: rgba(255,255,255,0.03); border-radius: 6px;
+                            font-size: 8.5px; color: #8b7fc7; line-height: 1.65; text-align: center;
+                        }
+                        #agreement-preview-wrap .pw-footer-bottom {
+                            margin-top: 16px; padding: 12px 28px;
+                            background: rgba(0,0,0,0.25);
+                            display: flex; justify-content: space-between; align-items: center;
+                            font-size: 8.5px; color: #7c6daa;
+                        }
+                        #agreement-preview-wrap .pw-footer-bottom a { color: #a78bfa; text-decoration: none; transition: color 0.2s; }
+                        #agreement-preview-wrap .pw-footer-bottom a:hover { color: #c4b5fd; }
+                        #agreement-preview-wrap .pw-footer-links { display: flex; gap: 16px; align-items: center; }
+                        #agreement-preview-wrap .pw-footer-social { display: flex; gap: 10px; align-items: center; }
+                        #agreement-preview-wrap .pw-footer-social a {
+                            display: inline-flex; align-items: center; justify-content: center;
+                            width: 22px; height: 22px; border-radius: 50%;
+                            background: rgba(167,139,250,0.12); color: #a78bfa;
+                            transition: all 0.2s;
+                        }
+                        #agreement-preview-wrap .pw-footer-social a:hover { background: rgba(167,139,250,0.25); color: #c4b5fd; }
+                        #agreement-preview-wrap .pw-footer-social a svg { width: 11px; height: 11px; }
+                        #agreement-preview-wrap .pw-content-area { font-size: 11px; line-height: 1.7; color: #000000; }
+                        #agreement-preview-wrap .pw-content-area * { color: #000000 !important; }
+                        #agreement-preview-wrap .pw-content-area h1,
+                        #agreement-preview-wrap .pw-content-area h2,
+                        #agreement-preview-wrap .pw-content-area h3,
+                        #agreement-preview-wrap .pw-content-area h4 { color: #000000 !important; margin: 12px 0 6px; font-weight: 700; }
+                        #agreement-preview-wrap .pw-content-area strong,
+                        #agreement-preview-wrap .pw-content-area b { font-weight: 700; }
+                        #agreement-preview-wrap .pw-content-area ul,
+                        #agreement-preview-wrap .pw-content-area ol { padding-left: 18px; margin: 6px 0; }
+                        #agreement-preview-wrap .pw-content-area li { margin-bottom: 3px; }
+                        #agreement-preview-wrap .pw-content-area p { margin: 0 0 6px; }
+                        #agreement-preview-wrap .pw-content-area td,
+                        #agreement-preview-wrap .pw-content-area th,
+                        #agreement-preview-wrap .pw-content-area span,
+                        #agreement-preview-wrap .pw-content-area a,
+                        #agreement-preview-wrap .pw-content-area em,
+                        #agreement-preview-wrap .pw-content-area i { color: #000000 !important; }
+                    </style>
+
+                    <style>
+                        #agreement-preview-wrap::-webkit-scrollbar { width: 6px; }
+                        #agreement-preview-wrap::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+                        #agreement-preview-wrap::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 10px; }
+                        #agreement-preview-wrap::-webkit-scrollbar-thumb:hover { background: #a78bfa; }
+                    </style>
+
                     @if ($agreement->currentVersion)
-                        <div class="mx-auto max-w-md">
-                            <div class="mb-3 flex items-center justify-center gap-2">
-                                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white">
-                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>
-                                </div>
-                                <div class="text-left">
-                                    <div class="text-sm font-extrabold tracking-wider text-purple-800">MARS STATION</div>
-                                    <div class="text-[8px] tracking-widest text-purple-700">TURNING VISION INTO DIGITAL REALITY</div>
-                                </div>
-                            </div>
-
-                            <div class="my-6 border-t border-slate-200"></div>
-
-                            <h3 class="text-lg font-bold text-slate-900">AGREEMENT</h3>
-                            <h4 class="text-base font-semibold text-slate-900">{{ $agreement->title }}</h4>
-                            <p class="mt-2 text-xs text-slate-700">Agreement No: <span class="font-semibold text-slate-900">{{ $agreement->agreement_number }}</span></p>
-
-                            <div class="mt-4 flex items-start justify-start gap-4 text-[11px] text-slate-700">
-                                <span>Client: <span class="font-semibold text-slate-900">{{ $agreement->client_name }}</span></span>
-                                <span>Payment: <span class="font-semibold text-slate-900">{{ $agreement->payment_type->label() }}</span></span>
-                            </div>
-
-                            <p class="mt-4 text-xs text-slate-700">Effective Date: {{ $agreement->created_at->format('F d, Y') }}</p>
-
-                            @if ($agreement->validity_date)
-                                <p class="text-xs text-slate-700">Valid Until: {{ $agreement->validity_date->format('F d, Y') }}</p>
-                            @endif
-
-                            @if ($agreement->amountTotalPence() > 0)
-                                <p class="mt-2 text-sm font-bold text-purple-800">{{ $agreement->formatted_amount }}</p>
-                            @endif
-
-                            @if ($agreement->currentVersion->content)
-                                <div class="mt-8 border-t border-slate-200 pt-5 prose-preview">
-                                    {!! $agreement->currentVersion->content !!}
-                                </div>
-                            @endif
-                        </div>
+                        @include('partials._agreement-document', ['version' => $agreement->currentVersion, 'pdfMode' => false])
                     @else
                         <div class="py-12 text-slate-400">
                             <svg class="mx-auto h-12 w-12 mb-3" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>

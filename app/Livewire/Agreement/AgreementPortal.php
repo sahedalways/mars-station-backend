@@ -19,6 +19,8 @@ class AgreementPortal extends Component
 {
     public ?AgreementLink $link = null;
 
+    public bool $isArchived = false;
+
     public string $step = 'view';
 
     // OTP flow
@@ -47,7 +49,11 @@ class AgreementPortal extends Component
 
         $agreement = $this->link->agreement;
 
-        abort_if($agreement->is_archived, 410, 'This agreement has been archived.');
+        if ($agreement->is_archived) {
+            $this->isArchived = true;
+
+            return;
+        }
 
         $this->signName = $agreement->client_name;
         $this->signEmail = $agreement->client_email;
@@ -56,11 +62,13 @@ class AgreementPortal extends Component
         $this->recordAccess('viewed');
 
         if ($this->link->otp_enabled) {
-            $session = session("agreement_otp_{$this->link->id}");
+            $sessionId = session("agreement_otp_{$this->link->id}");
+            $session = is_int($sessionId) ? AgreementOtpSession::find($sessionId) : null;
 
             if ($session && $session->grantsAccess()) {
                 $this->step = 'view';
             } else {
+                session()->forget("agreement_otp_{$this->link->id}");
                 $this->step = 'otp';
                 $this->requestOtp();
             }
@@ -146,7 +154,7 @@ class AgreementPortal extends Component
             'consumed_at' => now(),
         ]);
 
-        session()->put("agreement_otp_{$this->link->id}", $session);
+        session()->put("agreement_otp_{$this->link->id}", $session->id);
         $this->step = 'view';
         $this->otp = '';
         $this->error = '';
@@ -167,8 +175,9 @@ class AgreementPortal extends Component
         abort_if($version->isSigned(), 409, 'This version has already been signed.');
 
         if ($this->link->otp_enabled) {
-            $session = session("agreement_otp_{$this->link->id}");
-            abort_unless($session && $session->grantsAccess(), 403, 'Agreement access expired. Please reload the page.');
+            $signSessionId = session("agreement_otp_{$this->link->id}");
+            $signSession = is_int($signSessionId) ? AgreementOtpSession::find($signSessionId) : null;
+            abort_unless($signSession && $signSession->grantsAccess(), 403, 'Agreement access expired. Please reload the page.');
         }
 
         $pdfService = app(PdfService::class);
@@ -227,6 +236,21 @@ class AgreementPortal extends Component
     public function complete(): void
     {
         $this->step = 'complete';
+    }
+
+    public function goToSign(): void
+    {
+        $this->step = 'sign';
+    }
+
+    public function goToView(): void
+    {
+        $this->step = 'view';
+    }
+
+    public function goToPayment(): void
+    {
+        $this->step = 'payment';
     }
 
     public function downloadPdf()
@@ -344,6 +368,11 @@ class AgreementPortal extends Component
 
     public function render()
     {
+        if ($this->isArchived) {
+            return view('livewire.agreement.archived')
+                ->title('Agreement Archived');
+        }
+
         return view('livewire.agreement.agreement-portal', [
             'agreement' => $this->link->agreement,
             'version' => $this->link->version,

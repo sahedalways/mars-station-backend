@@ -423,7 +423,7 @@
                 </div>
 
                 @if ($payments->hasPages())
-                    <div class="[&_button]:!bg-slate-900/60 [&_button]:!ring-purple-500/20 [&_button]:!text-slate-300 [&_span[aria-current]]:!bg-purple-600 [&_span[aria-current]]:!text-white">
+                    <div class="border-t border-purple-500/10 px-4 py-3">
                         {{ $payments->links() }}
                     </div>
                 @endif

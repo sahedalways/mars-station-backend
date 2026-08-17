@@ -29,6 +29,13 @@ class ComplaintIndex extends Component
 
     public string $replyBody = '';
 
+    public function getSelectedComplaintProperty(): ?Complaint
+    {
+        return $this->selectedComplaintId
+            ? Complaint::with('messages', 'attachments')->find($this->selectedComplaintId)
+            : null;
+    }
+
     public function updatedSearch(): void
     {
         $this->resetPage();
@@ -75,7 +82,28 @@ class ComplaintIndex extends Component
         ], auth('admin')->user());
 
         $this->showReplyModal = false;
+        $this->selectedComplaintId = null;
+        $this->replyBody = '';
         $this->dispatch('toast', message: 'Reply sent to client.', type: 'success');
+    }
+
+    public function markUnread(Complaint $complaint): void
+    {
+        $complaint->update([
+            'is_read' => false,
+            'read_at' => null,
+        ]);
+
+        $this->dispatch('toast', message: 'Marked as unread.', type: 'success');
+    }
+
+    public function delete(Complaint $complaint): void
+    {
+        $complaint->delete();
+
+        $this->showReplyModal = false;
+        $this->selectedComplaintId = null;
+        $this->dispatch('toast', message: 'Complaint deleted.', type: 'success');
     }
 
     public function setStatus(Complaint $complaint, string $status, ActivityLogService $logs): void
@@ -86,12 +114,22 @@ class ComplaintIndex extends Component
             'name' => $complaint->full_name,
             'to' => $status,
         ], auth('admin')->user());
+
+        $this->dispatch('toast', message: 'Status updated to ' . $status . '.', type: 'success');
+    }
+
+    public function closeModal(): void
+    {
+        $this->showReplyModal = false;
+        $this->selectedComplaintId = null;
+        $this->replyBody = '';
     }
 
     public function render()
     {
         return view('livewire.admin.complaints.complaint-index', [
             'complaints' => $this->complaints(),
+            'selectedComplaint' => $this->selectedComplaint,
         ])->title('Complaints');
     }
 
@@ -105,6 +143,6 @@ class ComplaintIndex extends Component
             }))
             ->when($this->status, fn (Builder $q) => $q->where('status', $this->status))
             ->latest()
-            ->paginate(15);
+            ->paginate(10);
     }
 }

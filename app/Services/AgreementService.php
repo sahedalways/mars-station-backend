@@ -4,13 +4,15 @@ namespace App\Services;
 
 use App\Enums\AgreementPaymentType;
 use App\Enums\AgreementStatus;
+use App\Mail\AgreementCompletedMail;
 use App\Mail\AgreementSentMail;
+use App\Mail\AgreementSignedMail;
+use App\Mail\AgreementTerminatedMail;
 use App\Models\Admin;
 use App\Models\Agreement;
 use App\Models\AgreementLink;
 use App\Models\AgreementVersion;
 use App\Support\AgreementNumber;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -19,8 +21,7 @@ class AgreementService
     public function __construct(
         private readonly EmailService $email,
         private readonly ActivityLogService $logs,
-    ) {
-    }
+    ) {}
 
     public function create(array $data, Admin $admin, ?array $attachment = null): Agreement
     {
@@ -254,6 +255,28 @@ class AgreementService
 
         $agreement->update(['status' => $status]);
 
+        if ($status === AgreementStatus::Completed) {
+            $link = $agreement->activeLink;
+
+            if ($link) {
+                $this->email->send(
+                    new AgreementCompletedMail($agreement, $link),
+                    $agreement->client_email,
+                    'agreement.completed',
+                    $agreement,
+                    $admin
+                );
+            }
+        } elseif ($status === AgreementStatus::Terminated) {
+            $this->email->send(
+                new AgreementTerminatedMail($agreement),
+                $agreement->client_email,
+                'agreement.terminated',
+                $agreement,
+                $admin
+            );
+        }
+
         $this->logs->record('agreement.status_changed', $agreement, [
             'from' => $old->value,
             'to' => $status->value,
@@ -263,6 +286,29 @@ class AgreementService
     public function markSigned(Agreement $agreement, AgreementVersion $version): void
     {
         $agreement->update(['status' => AgreementStatus::Signed]);
+
+        $link = $agreement->activeLink;
+
+        if ($link) {
+            $this->email->send(
+                new AgreementSignedMail($agreement, $link, $version),
+                $agreement->client_email,
+                'agreement.signed',
+                $agreement
+            );
+        }
+
+        $admin = $agreement->creator;
+
+        if ($admin) {
+            $this->email->send(
+                new AgreementSignedMail($agreement, $link, $version),
+                $admin->email,
+                'agreement.signed',
+                $agreement,
+                $admin
+            );
+        }
     }
 
     public function deletePermanently(Agreement $agreement, Admin $admin): void

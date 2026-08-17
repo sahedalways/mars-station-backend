@@ -29,6 +29,13 @@ class QueryIndex extends Component
 
     public string $replyBody = '';
 
+    public function getSelectedQueryProperty(): ?Query
+    {
+        return $this->selectedQueryId
+            ? Query::with('messages', 'attachments')->find($this->selectedQueryId)
+            : null;
+    }
+
     public function updatedSearch(): void
     {
         $this->resetPage();
@@ -75,7 +82,28 @@ class QueryIndex extends Component
         ], auth('admin')->user());
 
         $this->showReplyModal = false;
+        $this->selectedQueryId = null;
+        $this->replyBody = '';
         $this->dispatch('toast', message: 'Reply sent to client.', type: 'success');
+    }
+
+    public function markUnread(Query $query): void
+    {
+        $query->update([
+            'is_read' => false,
+            'read_at' => null,
+        ]);
+
+        $this->dispatch('toast', message: 'Marked as unread.', type: 'success');
+    }
+
+    public function delete(Query $query): void
+    {
+        $query->delete();
+
+        $this->showReplyModal = false;
+        $this->selectedQueryId = null;
+        $this->dispatch('toast', message: 'Query deleted.', type: 'success');
     }
 
     public function setStatus(Query $query, string $status, ActivityLogService $logs): void
@@ -86,12 +114,22 @@ class QueryIndex extends Component
             'name' => $query->full_name,
             'to' => $status,
         ], auth('admin')->user());
+
+        $this->dispatch('toast', message: 'Status updated to ' . $status . '.', type: 'success');
+    }
+
+    public function closeModal(): void
+    {
+        $this->showReplyModal = false;
+        $this->selectedQueryId = null;
+        $this->replyBody = '';
     }
 
     public function render()
     {
         return view('livewire.admin.queries.query-index', [
             'queries' => $this->buildQuery(),
+            'selectedQuery' => $this->selectedQuery,
         ])->title('Queries');
     }
 
@@ -105,6 +143,6 @@ class QueryIndex extends Component
             }))
             ->when($this->status, fn (Builder $q) => $q->where('status', $this->status))
             ->latest()
-            ->paginate(15);
+            ->paginate(10);
     }
 }

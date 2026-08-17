@@ -11,17 +11,12 @@
 <body class="min-h-screen bg-slate-100 font-sans antialiased">
     <div class="min-h-screen px-4 py-8">
         <div class="mx-auto w-full max-w-3xl">
-            <div class="mb-8 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <x-logo class="h-8 w-8"/>
-                    <div>
-                        <div class="text-lg font-bold tracking-tight text-slate-900">Mars Station</div>
-                        <div class="text-sm text-slate-500">Client Portal</div>
-                    </div>
-                </div>
+            <div class="mb-10 text-center">
+                <img src="{{ asset('logo.png') }}" alt="Mars Station" class="mx-auto h-12 w-auto" style="filter: brightness(2) drop-shadow(0 0 8px rgba(168,85,247,0.6));">
+                <div class="mt-3 text-xs font-medium tracking-widest text-slate-500 uppercase mb-5">Client Portal</div>
             </div>
 
-            <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div>
                 {{ $slot }}
             </div>
 

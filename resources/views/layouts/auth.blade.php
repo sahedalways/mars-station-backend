@@ -9,7 +9,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="cosmic-bg min-h-screen font-sans text-slate-100 antialiased">
+<body class="cosmic-bg min-h-screen overflow-hidden font-sans text-slate-100 antialiased">
     <div class="relative z-10 flex min-h-screen items-center px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
         <div class="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-20">
 

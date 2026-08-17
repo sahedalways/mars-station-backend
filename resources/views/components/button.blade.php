@@ -24,27 +24,31 @@
 
     $base = 'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-semibold shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ';
 
-    // Every submit button shares one consistent look + hover.
     $style = $isSubmit
         ? 'bg-indigo-600 text-white hover:bg-indigo-500 focus-visible:ring-indigo-600'
         : ($variants[$variant] ?? $variants['primary']);
 
     $sizeClass = $sizes[$size] ?? $sizes['md'];
+
+    $loadingTarget = $attributes->get('wire:target');
 @endphp
 
 <button
     {{ $attributes->merge([
         'type' => $type,
-        'wire:loading.attr' => 'disabled',
         'class' => $base.$style.' '.$sizeClass,
     ]) }}
 >
-    <span wire:loading.remove>{{ $slot }}</span>
-    <span wire:loading class="inline-flex items-center gap-2" aria-live="polite">
-        <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-        </svg>
-        <span class="sr-only">Loading</span>
-    </span>
+    @if($loadingTarget)
+        <span wire:loading.remove wire:target="{{ $loadingTarget }}">{{ $slot }}</span>
+        <span wire:loading wire:target="{{ $loadingTarget }}" class="inline-flex items-center gap-2" aria-live="polite">
+            <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <span class="sr-only">Loading</span>
+        </span>
+    @else
+        {{ $slot }}
+    @endif
 </button>

@@ -14,6 +14,9 @@ class Query extends Model
     protected $fillable = [
         'full_name',
         'email',
+        'phone',
+        'preferred_contact',
+        'selected_services',
         'query',
         'status',
         'is_read',
@@ -24,6 +27,7 @@ class Query extends Model
         'status' => QueryStatus::class,
         'is_read' => 'boolean',
         'read_at' => 'datetime',
+        'selected_services' => 'array',
     ];
 
     public function messages()

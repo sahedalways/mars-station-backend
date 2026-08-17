@@ -147,7 +147,7 @@ class PaymentHistory extends Component
             ? $this->sortField
             : 'created_at';
 
-        return $query->orderBy($column, $this->sortDirection)->paginate(15);
+        return $query->orderBy($column, $this->sortDirection)->paginate(10);
     }
 
     #[Computed]

@@ -30,10 +30,13 @@ Route::prefix('admin')->group(function () {
             ->name('admin.attachments.download');
 
         Route::get('get-services', \App\Livewire\Admin\GetServices\GetServiceIndex::class)->name('admin.get-services.index');
+        Route::get('get-services/export', [\App\Http\Controllers\GetServiceExportController::class, 'export'])->name('admin.get-services.export');
         Route::get('services', \App\Livewire\Admin\Services\ServiceIndex::class)->name('admin.services.index');
         Route::get('reviews', \App\Livewire\Admin\Reviews\ReviewIndex::class)->name('admin.reviews.index');
         Route::get('complaints', \App\Livewire\Admin\Complaints\ComplaintIndex::class)->name('admin.complaints.index');
+        Route::get('complaints/export', [\App\Http\Controllers\ComplaintExportController::class, 'export'])->name('admin.complaints.export');
         Route::get('queries', \App\Livewire\Admin\Queries\QueryIndex::class)->name('admin.queries.index');
+        Route::get('queries/export', [\App\Http\Controllers\QueryExportController::class, 'export'])->name('admin.queries.export');
     });
 
     Route::post('logout', function () {

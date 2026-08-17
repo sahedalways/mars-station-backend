@@ -1,11 +1,14 @@
 @import "tailwindcss";
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../vendor/livewire/livewire/src/Features/SupportPagination/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../views';
+@source not '../views/welcome.blade.php';
+
 @source '../../app/Livewire';
 @source '../../app/View/Components';
+@source '../views/livewire';
+@source '../views/components';
+@source '../views/layouts';
+@source '../views/vendor';
+@source '../views/mail';
 
 @import url("https://fonts.bunny.net/css?family=inter:400,500,600,700,800");
 
@@ -424,4 +427,12 @@ select:not([disabled]) {
     background: #f8fafc;
     font-weight: 600;
     color: #1e293b;
+}
+
+/* Pagination responsive: mobile shows first div, desktop shows second */
+.pagination-nav > div:first-child { display: flex; }
+.pagination-nav > div:last-child { display: none; }
+@media (min-width: 640px) {
+    .pagination-nav > div:first-child { display: none; }
+    .pagination-nav > div:last-child { display: flex !important; }
 }

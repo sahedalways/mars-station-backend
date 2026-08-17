@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\SendEmailJob;
+use App\Mail\StatusNotificationMail;
 use App\Models\Admin;
 use App\Models\EmailLog;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,11 @@ use Illuminate\Mail\Mailable;
 
 class EmailService
 {
+    public function sendStatusNotification(string $to, array $data, ?Model $emailable = null, ?Admin $admin = null): EmailLog
+    {
+        return $this->send(new StatusNotificationMail($data), $to, $data['event'] ?? 'status.changed', $emailable, $admin);
+    }
+
     public function send(
         Mailable $mailable,
         string $to,
