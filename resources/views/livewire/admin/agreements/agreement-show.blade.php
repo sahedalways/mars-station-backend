@@ -362,7 +362,7 @@
                     <h2 class="text-base font-bold text-white">Version History</h2>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div id="version-history-scroll" class="overflow-x-auto overflow-y-auto" style="max-height: 270px;">
                     <table class="w-full text-left text-sm">
                         <thead>
                             <tr class="border-b border-white/5 text-[11px] uppercase tracking-wider text-slate-500">
@@ -412,7 +412,7 @@
                     <h2 class="text-base font-bold text-white">Activity Timeline</h2>
                 </div>
 
-                <ol class="relative space-y-4 border-l border-purple-500/20 pl-5">
+                <ol id="activity-timeline-scroll" class="relative space-y-4 overflow-y-auto border-l border-purple-500/20 pl-5" style="max-height: 270px;">
                     @forelse ($agreement->accessLogs as $log)
                         <li class="relative">
                             <span class="absolute -left-[27px] top-1.5 h-2.5 w-2.5 rounded-full {{ $log->status === 'verified' ? 'bg-emerald-500 ring-4 ring-emerald-500/20' : 'bg-purple-500 ring-4 ring-purple-500/20' }}"></span>
@@ -640,6 +640,19 @@
                         #agreement-preview-wrap::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
                         #agreement-preview-wrap::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 10px; }
                         #agreement-preview-wrap::-webkit-scrollbar-thumb:hover { background: #a78bfa; }
+
+                        #version-history-scroll::-webkit-scrollbar,
+                        #activity-timeline-scroll::-webkit-scrollbar,
+                        #access-history-scroll::-webkit-scrollbar { width: 6px; }
+                        #version-history-scroll::-webkit-scrollbar-track,
+                        #activity-timeline-scroll::-webkit-scrollbar-track,
+                        #access-history-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+                        #version-history-scroll::-webkit-scrollbar-thumb,
+                        #activity-timeline-scroll::-webkit-scrollbar-thumb,
+                        #access-history-scroll::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 10px; }
+                        #version-history-scroll::-webkit-scrollbar-thumb:hover,
+                        #activity-timeline-scroll::-webkit-scrollbar-thumb:hover,
+                        #access-history-scroll::-webkit-scrollbar-thumb:hover { background: #a78bfa; }
                     </style>
 
                     @if ($agreement->currentVersion)
@@ -898,7 +911,7 @@
                     </div>
                 </div>
 
-                <ul class="space-y-3">
+                <ul id="access-history-scroll" class="space-y-3 overflow-y-auto" style="max-height: 270px;">
                     @forelse ($agreement->accessLogs->take(5) as $log)
                         <li class="flex items-start gap-3 border-b border-white/5 pb-3 last:border-0 last:pb-0">
                             <div class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full {{ $log->status === 'verified' ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30' : 'bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-500/30' }}">
