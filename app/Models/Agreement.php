@@ -121,7 +121,7 @@ class Agreement extends Model
     public function amountTotalPence(?int $current = 0): int
     {
         return match ($this->payment_type) {
-            AgreementPaymentType::Full => $current,
+            AgreementPaymentType::Full => $this->currentVersion?->payment_config['amount_pence'] ?? $current,
             AgreementPaymentType::Milestone => $this->milestones()->sum('amount_pence'),
             AgreementPaymentType::Subscription => $this->subscriptions()->sum('amount_pence'),
             default => 0,

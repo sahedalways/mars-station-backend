@@ -25,6 +25,10 @@ class AgreementEdit extends Component
 
     public ?string $client_mobile = null;
 
+    public string $client_mobile_dial = '+44';
+
+    public string $client_dial_code = '+44';
+
     public string $content = '';
 
     public ?string $validity_date = null;
@@ -57,6 +61,15 @@ class AgreementEdit extends Component
         $this->client_name = $version->client_name;
         $this->client_email = $version->client_email;
         $this->client_mobile = $version->client_mobile;
+
+        if ($this->client_mobile && str_starts_with($this->client_mobile, '+')) {
+            preg_match('/^\+\d{1,4}/', $this->client_mobile, $m);
+            if ($m) {
+                $this->client_mobile_dial = $m[0];
+                $this->client_mobile = substr($this->client_mobile, strlen($m[0]));
+            }
+        }
+
         $this->content = $version->content;
         $this->validity_date = $version->validity_date?->format('Y-m-d');
         $this->payment_type = $agreement->payment_type->value;
@@ -177,7 +190,7 @@ class AgreementEdit extends Component
             'title' => $this->title,
             'client_name' => $this->client_name,
             'client_email' => $this->client_email,
-            'client_mobile' => $this->client_mobile,
+            'client_mobile' => $this->client_mobile ? $this->client_dial_code . $this->client_mobile : null,
             'content' => $this->content,
             'validity_date' => $this->validity_date,
             'payment_type' => $this->payment_type,

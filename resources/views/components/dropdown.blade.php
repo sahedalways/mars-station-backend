@@ -17,7 +17,7 @@
         x-transition
         x-cloak
         @class([
-            'absolute z-30 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg',
+            'absolute z-[100] mt-2 rounded-xl border border-purple-500/20 bg-slate-900/95 py-1.5 shadow-lg shadow-purple-950/40 backdrop-blur-xl scrollbar-none',
             $width,
             'right-0' => $align === 'right',
             'left-0' => $align === 'left',

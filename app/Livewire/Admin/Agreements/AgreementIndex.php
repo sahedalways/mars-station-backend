@@ -49,6 +49,11 @@ class AgreementIndex extends Component
 
     public int $archiveTargetId = 0;
 
+    public function closeModal(string $property): void
+    {
+        $this->$property = false;
+    }
+
     public function setTab(string $tab): void
     {
         $this->tab = $tab;
@@ -156,6 +161,8 @@ class AgreementIndex extends Component
         $query = Agreement::query()
             ->with([
                 'currentVersion',
+                'milestones',
+                'subscriptions',
                 'payments' => fn ($q) => $q->select('id', 'agreement_id', 'amount_pence', 'status', 'type', 'refunded_amount_pence', 'created_at'),
             ])
             ->when($this->tab === 'archived', fn (Builder $q) => $q->where('is_archived', true))

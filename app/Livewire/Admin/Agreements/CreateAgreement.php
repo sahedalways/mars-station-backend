@@ -23,11 +23,13 @@ class CreateAgreement extends Component
 
     public ?string $client_mobile = null;
 
+    public string $client_dial_code = '+44';
+
     public string $content = '';
 
     public ?string $validity_date = null;
 
-    #[Validate(['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,png,jpg,jpeg'])]
+    #[Validate(['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,png,jpg,jpeg,heic,heif,webp'])]
     public $attachment = null;
 
     public string $payment_type = 'none';

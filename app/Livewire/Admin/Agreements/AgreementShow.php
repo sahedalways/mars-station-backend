@@ -26,9 +26,17 @@ class AgreementShow extends Component
 
     public bool $showOtpToggleModal = false;
 
+    public bool $showTerminateModal = false;
+
+    public bool $showPaymentReminderModal = false;
+
     public function mount(Agreement $agreement): void
     {
         abort_unless($agreement->exists, 404);
+
+        // A freshly mounted agreement page must never inherit an Alpine modal state
+        // from the create/edit page during wire:navigate.
+        $this->showPaymentReminderModal = false;
 
         $this->agreement = $agreement->load([
             'versions' => fn ($q) => $q->latest('version'),
@@ -43,6 +51,11 @@ class AgreementShow extends Component
         ]);
 
         $this->newStatus = $agreement->status->value;
+    }
+
+    public function closeModal(string $property): void
+    {
+        $this->$property = false;
     }
 
     public function openStatusModal(): void
@@ -73,6 +86,18 @@ class AgreementShow extends Component
         $this->showArchiveModal = false;
 
         $this->dispatch('toast', message: 'Agreement archived.', type: 'success');
+    }
+
+    public function terminateAgreement(AgreementService $service): void
+    {
+        $service->changeStatus($this->agreement, AgreementStatus::Terminated, auth('admin')->user());
+
+        $this->agreement->links()->where('is_active', true)->get()->each->disable();
+        $this->agreement->refresh();
+
+        $this->showTerminateModal = false;
+
+        $this->dispatch('toast', message: 'Agreement terminated. Client link disabled.', type: 'success');
     }
 
     public function regenerateLink(AgreementService $service): void
@@ -122,6 +147,23 @@ class AgreementShow extends Component
         $this->showResendModal = false;
 
         $this->dispatch('toast', message: 'Agreement email resent.', type: 'success');
+    }
+
+    public function sendPaymentReminder(AgreementService $service): void
+    {
+        $link = $this->agreement->links()->where('is_active', true)->latest('id')->first();
+
+        if (! $link) {
+            $link = $service->createLink($this->agreement, $this->agreement->currentVersion, auth('admin')->user());
+        }
+
+        $version = $this->agreement->currentVersion;
+
+        $service->sendAgreement($this->agreement, $link, $version, auth('admin')->user());
+
+        $this->showPaymentReminderModal = false;
+
+        $this->dispatch('toast', message: 'Payment reminder sent to ' . $this->agreement->client_email . '.', type: 'success');
     }
 
     public function downloadPdf(PdfService $pdf)
