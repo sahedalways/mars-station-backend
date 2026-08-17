@@ -1,0 +1,17 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+    content: [
+        "./resources/**/*.blade.php",
+        "./resources/**/*.js",
+        "./app/Livewire/**/*.php",
+        "./app/View/Components/**/*.php",
+    ],
+    theme: {
+        extend: {
+            fontFamily: {
+                sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+            },
+        },
+    },
+    plugins: [],
+};

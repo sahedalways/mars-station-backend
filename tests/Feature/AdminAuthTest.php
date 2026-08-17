@@ -2,8 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\Admin\Auth\LoginEmail;
-use App\Livewire\Admin\Auth\LoginVerify;
+use App\Livewire\Admin\Auth\AdminLogin;
 use App\Mail\AdminOtpMail;
 use App\Models\Admin;
 use App\Models\AdminOtpRequest;
@@ -21,7 +20,7 @@ class AdminAuthTest extends TestCase
     {
         $this->get(route('admin.login'))
             ->assertOk()
-            ->assertSee('Admin');
+            ->assertSee('Backend Login');
     }
 
     public function test_admin_can_request_otp(): void
@@ -33,10 +32,12 @@ class AdminAuthTest extends TestCase
             'is_active' => true,
         ]);
 
-        Livewire::test(LoginEmail::class)
+        Livewire::test(AdminLogin::class)
             ->set('email', 'admin@example.com')
             ->call('requestOtp')
-            ->assertRedirect(route('admin.login.verify'));
+            ->assertSet('step', 2)
+            ->assertSet('showModal', true)
+            ->assertSet('modalType', 'success');
 
         $this->assertDatabaseHas('admin_otp_requests', [
             'admin_id' => $admin->id,
@@ -55,13 +56,23 @@ class AdminAuthTest extends TestCase
 
     public function test_request_otp_is_generic_for_unknown_email(): void
     {
-        Livewire::test(LoginEmail::class)
+        Livewire::test(AdminLogin::class)
             ->set('email', 'nobody@example.com')
             ->call('requestOtp')
-            ->assertNoRedirect();
+            ->assertSet('step', 1)
+            ->assertSet('showModal', true)
+            ->assertSet('modalType', 'info');
 
         $this->assertDatabaseCount('admin_otp_requests', 0);
         $this->assertSame('nobody@example.com', session('admin_otp_pending_email'));
+    }
+
+    public function test_email_validation_rules_are_applied(): void
+    {
+        Livewire::test(AdminLogin::class)
+            ->set('email', 'not-an-email')
+            ->call('requestOtp')
+            ->assertHasErrors('email');
     }
 
     public function test_admin_can_login_with_valid_otp(): void
@@ -88,7 +99,9 @@ class AdminAuthTest extends TestCase
             'admin_otp_request_id' => $request->id,
         ]);
 
-        Livewire::test(LoginVerify::class)
+        Livewire::test(AdminLogin::class)
+            ->set('step', 2)
+            ->set('email', $admin->email)
             ->set('otp', $code)
             ->call('verifyOtp')
             ->assertRedirect(route('admin.dashboard'));
@@ -119,7 +132,9 @@ class AdminAuthTest extends TestCase
             'admin_otp_request_id' => $request->id,
         ]);
 
-        Livewire::test(LoginVerify::class)
+        Livewire::test(AdminLogin::class)
+            ->set('step', 2)
+            ->set('email', $admin->email)
             ->set('otp', '000000')
             ->call('verifyOtp')
             ->assertHasErrors('otp');
@@ -148,7 +163,9 @@ class AdminAuthTest extends TestCase
             'admin_otp_request_id' => $request->id,
         ]);
 
-        Livewire::test(LoginVerify::class)
+        Livewire::test(AdminLogin::class)
+            ->set('step', 2)
+            ->set('email', $admin->email)
             ->set('otp', '123456')
             ->call('verifyOtp')
             ->assertHasErrors('otp');
@@ -179,7 +196,9 @@ class AdminAuthTest extends TestCase
             'admin_otp_request_id' => $request->id,
         ]);
 
-        Livewire::test(LoginVerify::class)
+        Livewire::test(AdminLogin::class)
+            ->set('step', 2)
+            ->set('email', $admin->email)
             ->set('otp', '123456')
             ->call('verifyOtp')
             ->assertHasErrors('otp');

@@ -1,9 +1,14 @@
-@props(['class' => 'h-8 w-8'])
+@props(['class' => 'h-10 w-10'])
 
 <svg class="{{ $class }}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <circle cx="50" cy="50" r="46" fill="#0f172a"/>
-    <circle cx="50" cy="50" r="30" fill="#6366f1"/>
-    <circle cx="50" cy="50" r="14" fill="#0f172a"/>
-    <circle cx="72" cy="22" r="8" fill="#f97316"/>
-    <path d="M40 78c6 4 16 5 24 2" stroke="#f8fafc" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <defs>
+        <linearGradient id="logoGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#a855f7"/>
+            <stop offset="100%" stop-color="#7c3aed"/>
+        </linearGradient>
+    </defs>
+    <path d="M50 6 L88 28 L88 72 L50 94 L12 72 L12 28 Z"
+          stroke="url(#logoGrad)" stroke-width="6" fill="none" stroke-linejoin="round"/>
+    <path d="M35 38 Q50 30 65 38 Q60 50 50 50 Q40 50 35 62 Q50 70 65 62"
+          stroke="url(#logoGrad)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

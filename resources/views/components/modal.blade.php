@@ -2,6 +2,7 @@
     'name' => 'modal',
     'maxWidth' => 'lg',
     'show' => 'show',
+    'title' => '',
 ])
 
 @php
