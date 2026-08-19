@@ -10,7 +10,10 @@ use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\Payments\PaymentHistory;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('admin')->group(function () {
+$adminSubdomain = config('app.admin_subdomain', env('ADMIN_SUBDOMAIN', 'hp200397'));
+$domain = config('app.domain', env('APP_DOMAIN', 'marsstation.dev'));
+
+Route::domain("{$adminSubdomain}.{$domain}")->group(function () {
     Route::middleware(['web', AdminGuest::class])->group(function () {
         Route::get('login', AdminLogin::class)->name('admin.login');
     });

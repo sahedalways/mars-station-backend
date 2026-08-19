@@ -46,6 +46,31 @@ class PaymentHistory extends Component
 
     public bool $showExportModal = false;
 
+    public bool $showRefundModal = false;
+
+    public int $refundTargetId = 0;
+
+    public int $refundAmountPence = 0;
+
+    public string $refundReason = '';
+
+    public string $refundAmountFormatted = '';
+
+    public function updatedRefundAmountFormatted(string $value): void
+    {
+        $value = str_replace([',', ' '], '', $value);
+        $pence = (int) round((float) $value * 100);
+        $this->refundAmountPence = max(1, min($pence, $this->refundTargetId ? \App\Models\Payment::find($this->refundTargetId)?->refundableAmountPence() ?? 0 : 0));
+        $this->refundAmountFormatted = \App\Support\Money::format($this->refundAmountPence);
+    }
+
+    public function updatedRefundAmountPence(int $value): void
+    {
+        if ($value > 0) {
+            $this->refundAmountFormatted = \App\Support\Money::format($value);
+        }
+    }
+
     public function updatedDateRange(): void
     {
         $this->resetPage();
@@ -108,6 +133,109 @@ class PaymentHistory extends Component
         $this->dispatch('toast', message: 'Export is being generated. You will receive an email when ready.', type: 'success');
     }
 
+    public function openRefundModal(int $paymentId): void
+    {
+        $payment = Payment::with('agreement')->findOrFail($paymentId);
+        $this->refundTargetId = $paymentId;
+        $this->refundAmountPence = $payment->refundableAmountPence();
+        $this->refundAmountFormatted = \App\Support\Money::format($payment->refundableAmountPence());
+        $this->refundReason = '';
+        $this->showRefundModal = true;
+    }
+
+    public function closeRefundModal(): void
+    {
+        $this->showRefundModal = false;
+        $this->refundTargetId = 0;
+        $this->refundAmountPence = 0;
+        $this->refundAmountFormatted = '';
+        $this->refundReason = '';
+        $this->resetErrorBag();
+    }
+
+    public function closeModal(string $property): void
+    {
+        $this->$property = false;
+    }
+
+    public function processRefund(\App\Services\StripeService $stripe, \App\Services\EmailService $email): void
+    {
+        $this->validate([
+            'refundAmountPence' => 'required|integer|min:1',
+            'refundReason' => 'required|string|max:500',
+        ]);
+
+        $payment = Payment::with('agreement')->findOrFail($this->refundTargetId);
+
+        if ($this->refundAmountPence > $payment->refundableAmountPence()) {
+            $this->addError('refundAmountPence', 'Refund amount exceeds refundable amount.');
+
+            return;
+        }
+
+        if (! $payment->stripe_payment_intent_id) {
+            $this->addError('refundAmountPence', 'Cannot refund: No Stripe payment intent found.');
+
+            return;
+        }
+
+        try {
+            $refundParams = [
+                'payment_intent' => $payment->stripe_payment_intent_id,
+                'amount' => $this->refundAmountPence,
+                'metadata' => [
+                    'admin_id' => auth('admin')->id(),
+                    'reason' => $this->refundReason,
+                ],
+            ];
+
+            if ($this->refundReason !== '') {
+                $refundParams['reason'] = 'requested_by_customer';
+            }
+
+            $stripeRefund = $stripe->createRefund($refundParams);
+
+            $refund = $payment->refunds()->create([
+                'payment_id' => $payment->id,
+                'stripe_refund_id' => $stripeRefund->id,
+                'amount_pence' => $this->refundAmountPence,
+                'currency' => $payment->currency,
+                'status' => $stripeRefund->status,
+                'reason' => $this->refundReason,
+                'admin_id' => auth('admin')->id(),
+                'processed_at' => now(),
+            ]);
+
+            $payment->increment('refunded_amount_pence', $this->refundAmountPence);
+
+            if ($payment->refunded_amount_pence >= $payment->amount_pence) {
+                $payment->status = \App\Enums\PaymentStatus::Refunded;
+            } else {
+                $payment->status = \App\Enums\PaymentStatus::PartiallyRefunded;
+            }
+            $payment->save();
+
+            // Send refund email to client
+            $link = $payment->agreement->links()->where('is_active', true)->latest('id')->first();
+            if ($link) {
+                $email->send(
+                    new \App\Mail\PaymentRefundedMail($payment->agreement, $refund, $link),
+                    $payment->agreement->client_email,
+                    'payment.refunded',
+                    $payment->agreement,
+                    auth('admin')->user()
+                );
+            }
+
+            $this->closeRefundModal();
+
+            $this->dispatch('toast', message: 'Refund processed successfully via Stripe. Client notified.', type: 'success');
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            \Log::error('Stripe refund failed', ['error' => $e->getMessage(), 'payment_id' => $payment->id]);
+            $this->addError('refundAmountPence', 'Stripe refund failed: ' . $e->getMessage());
+        }
+    }
+
     public function render()
     {
         return view('livewire.admin.payments.payment-history', [
@@ -125,7 +253,7 @@ class PaymentHistory extends Component
     public function payments()
     {
         $query = Payment::query()
-            ->with(['agreement' => fn ($q) => $q->select('id', 'agreement_number', 'title', 'client_name', 'client_email')])
+            ->with(['agreement' => fn ($q) => $q->select('id', 'agreement_number', 'title', 'client_name', 'client_email', 'payment_type')])
             ->with(['refunds' => fn ($q) => $q->where('status', 'succeeded')->latest('processed_at')])
             ->withCount('refunds')
             ->when($this->dateRange === '7d', fn (Builder $q) => $q->where('created_at', '>=', now()->subDays(7)))

@@ -99,11 +99,26 @@ return [
 
     'key' => env('APP_KEY'),
 
-    'previous_keys' => [
+'previous_keys' => [
         ...array_filter(
             explode(',', (string) env('APP_PREVIOUS_KEYS', ''))
         ),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Subdomain Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These configuration options determine the subdomains used for admin
+    | and client portals.
+    |
+    |--------------------------------------------------------------------------
+    */
+
+    'admin_subdomain' => env('ADMIN_SUBDOMAIN', 'hp200397'),
+    'client_subdomain' => env('CLIENT_SUBDOMAIN', 'client'),
+    'domain' => env('APP_DOMAIN', 'marsstation.dev'),
 
     /*
     |--------------------------------------------------------------------------
@@ -116,6 +131,7 @@ return [
     |
     | Supported drivers: "file", "cache", "array"
     |
+    |--------------------------------------------------------------------------
     */
 
     'maintenance' => [

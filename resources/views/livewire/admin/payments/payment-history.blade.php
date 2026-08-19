@@ -259,7 +259,7 @@
                             ['label' => 'Payment Method', 'field' => null],
                             ['label' => 'Refund Amount',  'field' => null],
                             ['label' => 'Refund Date',    'field' => null],
-                            ['label' => '',               'field' => null], // Type badge column
+                            ['label' => 'Agreement Type', 'field' => null],
                             ['label' => 'Action',         'field' => null],
                         ] as $col)
                             <th scope="col" class="px-4 py-3 text-left font-medium">
@@ -351,15 +351,15 @@
                                 @endif
                             </td>
 
-                            {{-- Type badge --}}
+                            {{-- Agreement Type --}}
                             <td class="whitespace-nowrap px-4 py-3">
                                 @php
-                                    $typeVal = $payment->type->value ?? 'full';
-                                    $typePill = match($typeVal) {
+                                    $agreementType = $payment->agreement?->payment_type->value ?? 'none';
+                                    $typePill = match($agreementType) {
                                         'full'         => ['bg' => 'bg-purple-500/15', 'text' => 'text-purple-300', 'ring' => 'ring-purple-500/30', 'label' => 'Full Payment'],
                                         'milestone'    => ['bg' => 'bg-orange-500/15', 'text' => 'text-orange-300', 'ring' => 'ring-orange-500/30', 'label' => 'Milestone'],
                                         'subscription' => ['bg' => 'bg-blue-500/15',   'text' => 'text-blue-300',   'ring' => 'ring-blue-500/30',   'label' => 'Subscription'],
-                                        default        => ['bg' => 'bg-slate-500/15',  'text' => 'text-slate-300',  'ring' => 'ring-slate-500/30',  'label' => ucfirst($typeVal)],
+                                        default        => ['bg' => 'bg-slate-500/15',  'text' => 'text-slate-300',  'ring' => 'ring-slate-500/30',  'label' => 'None'],
                                     };
                                 @endphp
                                 <span class="inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset {{ $typePill['bg'] }} {{ $typePill['text'] }} {{ $typePill['ring'] }}">
@@ -369,19 +369,28 @@
 
                             {{-- Action --}}
                             <td class="whitespace-nowrap px-4 py-3">
-                                <div class="flex items-center gap-1">
-                                    <button type="button" class="rounded-lg p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-purple-300" title="View">
-                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        </svg>
-                                    </button>
-                                    <button type="button" class="rounded-lg p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-slate-200" title="More">
-                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"/>
-                                        </svg>
-                                    </button>
-                                </div>
+                                <x-dropdown>
+                                    <x-slot:trigger>
+                                        <button type="button" class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-slate-200 cursor-pointer" aria-label="Actions">
+                                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/>
+                                            </svg>
+                                        </button>
+                                    </x-slot:trigger>
+                                    <div class="py-1.5">
+                                        <a href="{{ route('admin.agreements.show', $payment->agreement) }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 transition hover:bg-purple-500/10 hover:text-white">
+                                            <svg class="h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            View Agreement
+                                        </a>
+                                        <div class="mx-3 my-1 border-t border-purple-500/10"></div>
+                                        @if ($payment->status->value === 'succeeded')
+                                            <button type="button" wire:click="openRefundModal({{ $payment->id }})" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-amber-400 transition hover:bg-amber-500/10 hover:text-amber-300">
+                                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182"/></svg>
+                                                Refund
+                                            </button>
+                                        @endif
+                                    </div>
+                                </x-dropdown>
                             </td>
                         </tr>
                     @empty
@@ -441,6 +450,81 @@
         <x-slot:footer>
             <x-button type="button" variant="secondary" wire:click="$set('showExportModal', false)">Cancel</x-button>
             <x-button type="button" wire:click="exportCsv" wire:loading.attr="disabled" wire:target="exportCsv">Generate Export</x-button>
+        </x-slot:footer>
+    </x-modal>
+
+    {{-- Refund Modal --}}
+    <x-modal :show="'showRefundModal'" max-width="md">
+        <x-slot:title>Process Refund</x-slot:title>
+        <div class="space-y-4">
+            @php
+                $payment = \App\Models\Payment::with('agreement')->find($refundTargetId);
+                $maxRefundable = $payment ? \App\Support\Money::format($payment->refundableAmountPence()) : '—';
+            @endphp
+            @if ($payment)
+                <p class="text-sm text-slate-400">
+                    Refunding payment for <strong>{{ $payment->agreement?->agreement_number ?? '—' }}</strong> ({{ $payment->formattedAmount() }}).
+                    Maximum refundable: <strong>{{ $maxRefundable }}</strong>.
+                </p>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Refund Amount</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 pr-3">£</span>
+                        <input type="text"
+                               wire:model.live="refundAmountFormatted"
+                               @this(['refundAmountPence' => $payment->refundableAmountPence()])
+                               min="1" max="{{ $payment->refundableAmountPence() }}"
+                               class="block w-full rounded-lg border-0 bg-slate-900/60 pl-10 pr-3 py-2.5 text-sm text-slate-100 ring-1 ring-inset ring-purple-500/20 placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500"
+                               placeholder="e.g. 25.00"
+                               autocomplete="off">
+                    </div>
+                    @error('refundAmountPence')
+                        <p class="mt-1 text-sm text-red-400">{{ $message }}</p>
+                    @enderror
+
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        <button type="button"
+                                wire:click="$set('refundAmountPence', {{ $payment->refundableAmountPence() }})"
+                                class="text-xs px-2.5 py-1.5 rounded-md bg-purple-500/20 text-purple-300 ring-1 ring-inset ring-purple-500/30 hover:bg-purple-500/30 transition"
+                                title="Full amount">
+                            Full ({{ \App\Support\Money::format($payment->refundableAmountPence()) }})
+                        </button>
+                        <button type="button"
+                                wire:click="$set('refundAmountPence', {{ (int)($payment->refundableAmountPence() / 2) }})"
+                                class="text-xs px-2.5 py-1.5 rounded-md bg-slate-700 text-slate-300 ring-1 ring-inset ring-slate-600 hover:bg-slate-600 transition"
+                                title="Half amount">
+                            50%
+                        </button>
+                        <button type="button"
+                                wire:click="$set('refundAmountPence', {{ (int)($payment->refundableAmountPence() * 0.25) }})"
+                                class="text-xs px-2.5 py-1.5 rounded-md bg-slate-700 text-slate-300 ring-1 ring-inset ring-slate-600 hover:bg-slate-600 transition"
+                                title="Quarter amount">
+                            25%
+                        </button>
+                    </div>
+
+                    <p class="mt-1 text-xs text-slate-500">
+                        Available: <strong>{{ \App\Support\Money::format($payment->refundableAmountPence()) }}</strong>
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Reason</label>
+                    <textarea wire:model="refundReason" rows="3"
+                              class="block w-full rounded-lg border-0 bg-slate-900/60 p-3 text-sm text-slate-100 ring-1 ring-inset ring-purple-500/20 placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500"
+                              placeholder="Reason for refund..."></textarea>
+                    @error('refundReason')
+                        <p class="mt-1 text-sm text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+            @else
+                <p class="text-sm text-red-400">Payment not found.</p>
+            @endif
+        </div>
+        <x-slot:footer>
+            <x-button type="button" variant="secondary" wire:click="closeRefundModal">Cancel</x-button>
+            <x-button type="button" variant="danger" wire:click="processRefund" wire:loading.attr="disabled" wire:target="processRefund">Process Refund</x-button>
         </x-slot:footer>
     </x-modal>
 </div>

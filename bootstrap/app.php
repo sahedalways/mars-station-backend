@@ -29,6 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.auth' => AdminAuthenticated::class,
             'admin.guest' => AdminGuest::class,
         ]);
+
+        if (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'testing') {
+            $middleware->removeFromGroup('web', \Illuminate\Session\Middleware\AuthenticateSession::class);
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
