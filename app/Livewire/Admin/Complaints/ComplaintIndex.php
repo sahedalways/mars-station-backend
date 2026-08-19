@@ -46,6 +46,13 @@ class ComplaintIndex extends Component
         $this->resetPage();
     }
 
+    public function clearFilters(): void
+    {
+        $this->search = '';
+        $this->status = null;
+        $this->resetPage();
+    }
+
     public function openComplaint(Complaint $complaint): void
     {
         $complaint->markRead();

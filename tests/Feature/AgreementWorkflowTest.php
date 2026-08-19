@@ -190,7 +190,8 @@ class AgreementWorkflowTest extends TestCase
             'status' => 'signed',
         ]);
 
-        $component->assertSet('step', 'payment');
+        $component->assertSet('step', 'view');
+        $component->assertSet('showPaymentModal', true);
     }
 
     public function test_new_version_created_after_signing(): void

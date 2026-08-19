@@ -31,6 +31,8 @@ class Payment extends Model
         'failed_at',
         'metadata',
         'idempotency_key',
+        'action_required_secret',
+        'action_required_url',
     ];
 
     protected $casts = [

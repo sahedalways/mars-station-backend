@@ -5,9 +5,10 @@
 
 <div
     x-data="{ open: false }"
-    @click.outside="open = false"
-    class="relative inline-block"
->
+        @click.outside="open = false"
+        @keydown.escape.window="open = false"
+        class="relative inline-block"
+    >
     <div @click="open = !open" @keydown.escape="open = false">
         {{ $trigger }}
     </div>
@@ -22,7 +23,6 @@
             'right-0' => $align === 'right',
             'left-0' => $align === 'left',
         ])
-        @click="open = false"
     >
         {{ $slot }}
     </div>

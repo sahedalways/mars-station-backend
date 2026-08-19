@@ -6,7 +6,9 @@ use App\Enums\AgreementStatus;
 use App\Enums\MilestoneStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
+use App\Mail\PaymentActionRequiredMail;
 use App\Mail\PaymentFailedMail;
+use App\Mail\PaymentRefundFailedMail;
 use App\Mail\PaymentRefundedMail;
 use App\Mail\PaymentSuccessMail;
 use App\Mail\SubscribeCancelledMail;
@@ -64,14 +66,22 @@ class StripeWebhookController extends Controller
             'payment_intent.payment_failed' => $this->handlePaymentIntentFailed($event),
             'invoice.paid' => $this->handleInvoicePaid($event, $logs),
             'invoice.payment_failed' => $this->handleInvoicePaymentFailed($event),
+            'invoice.payment_action_required' => $this->handleInvoicePaymentActionRequired($event, $logs),
             'customer.subscription.updated' => $this->handleSubscriptionUpdated($event),
             'customer.subscription.deleted' => $this->handleSubscriptionDeleted($event),
-            'charge.refunded' => $this->handleChargeRefunded($event),
+            'charge.refunded' => $this->handleChargeRefunded($event, $logs),
+            'refund.created' => $this->handleRefundCreated($event),
+            'refund.updated' => $this->handleRefundUpdated($event),
+            'refund.failed' => $this->handleRefundFailed($event, $logs),
             default => null,
         };
 
         return response()->json(['received' => true]);
     }
+
+    // ---------------------------------------------------------------
+    // checkout.session.completed
+    // ---------------------------------------------------------------
 
     private function handleCheckoutCompleted($event, ActivityLogService $logs): void
     {
@@ -182,6 +192,10 @@ class StripeWebhookController extends Controller
         }
     }
 
+    // ---------------------------------------------------------------
+    // payment_intent.succeeded
+    // ---------------------------------------------------------------
+
     private function handlePaymentIntentSucceeded($event): void
     {
         $intent = $event->data->object;
@@ -203,6 +217,10 @@ class StripeWebhookController extends Controller
 
         $this->applySuccess($payment, $payment->agreement, $payment->type->value, $payment->milestone_id);
     }
+
+    // ---------------------------------------------------------------
+    // payment_intent.payment_failed
+    // ---------------------------------------------------------------
 
     private function handlePaymentIntentFailed($event): void
     {
@@ -230,6 +248,10 @@ class StripeWebhookController extends Controller
             }
         }
     }
+
+    // ---------------------------------------------------------------
+    // invoice.paid
+    // ---------------------------------------------------------------
 
     private function handleInvoicePaid($event, ActivityLogService $logs): void
     {
@@ -264,6 +286,10 @@ class StripeWebhookController extends Controller
         }
     }
 
+    // ---------------------------------------------------------------
+    // invoice.payment_failed
+    // ---------------------------------------------------------------
+
     private function handleInvoicePaymentFailed($event): void
     {
         $invoice = $event->data->object;
@@ -281,6 +307,73 @@ class StripeWebhookController extends Controller
                 'failed_at' => now(),
             ]);
     }
+
+    // ---------------------------------------------------------------
+    // invoice.payment_action_required
+    // ---------------------------------------------------------------
+
+    private function handleInvoicePaymentActionRequired($event, ActivityLogService $logs): void
+    {
+        $invoice = $event->data->object;
+
+        $subscriptionId = $invoice->subscription ?? null;
+        $paymentIntentId = is_string($invoice->payment_intent)
+            ? $invoice->payment_intent
+            : ($invoice->payment_intent?->id ?? null);
+
+        $payment = null;
+
+        if ($paymentIntentId) {
+            $payment = Payment::where('stripe_payment_intent_id', $paymentIntentId)
+                ->where('status', '!=', PaymentStatus::Succeeded->value)
+                ->first();
+        }
+
+        if (! $payment && $invoice->id) {
+            $payment = Payment::where('stripe_invoice_id', $invoice->id)
+                ->where('status', '!=', PaymentStatus::Succeeded->value)
+                ->first();
+        }
+
+        if (! $payment) {
+            return;
+        }
+
+        $clientSecret = is_string($invoice->payment_intent)
+            ? null
+            : ($invoice->payment_intent?->client_secret ?? null);
+
+        $payment->update([
+            'status' => PaymentStatus::RequiresAction,
+            'action_required_secret' => $clientSecret,
+            'action_required_url' => $invoice->hosted_invoice_url ?? null,
+            'metadata' => array_merge($payment->metadata ?? [], [
+                'invoice_action_required' => true,
+                'invoice_id' => $invoice->id,
+            ]),
+        ]);
+
+        $logs->record('payment.action_required', $payment, [
+            'agreement_number' => $payment->agreement->agreement_number,
+            'amount_pence' => $payment->amount_pence,
+            'invoice_id' => $invoice->id,
+        ]);
+
+        $link = $payment->agreement->activeLink;
+
+        if ($link) {
+            app(EmailService::class)->send(
+                new PaymentActionRequiredMail($payment->agreement, $payment, $link),
+                $payment->agreement->client_email,
+                'payment.action_required',
+                $payment->agreement
+            );
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // customer.subscription.updated
+    // ---------------------------------------------------------------
 
     private function handleSubscriptionUpdated($event): void
     {
@@ -303,6 +396,10 @@ class StripeWebhookController extends Controller
                 : $record->current_period_end,
         ]);
     }
+
+    // ---------------------------------------------------------------
+    // customer.subscription.deleted
+    // ---------------------------------------------------------------
 
     private function handleSubscriptionDeleted($event): void
     {
@@ -328,7 +425,11 @@ class StripeWebhookController extends Controller
         }
     }
 
-    private function handleChargeRefunded($event): void
+    // ---------------------------------------------------------------
+    // charge.refunded
+    // ---------------------------------------------------------------
+
+    private function handleChargeRefunded($event, ActivityLogService $logs): void
     {
         $charge = $event->data->object;
         $paymentIntentId = $charge->payment_intent;
@@ -344,25 +445,32 @@ class StripeWebhookController extends Controller
         }
 
         $refundedPence = 0;
-        $status = $charge->refunds->data[0]->status ?? 'succeeded';
 
         foreach ($charge->refunds->data as $refund) {
-            $refundedPence += (int) ($refund->amount ?? 0);
+            $amount = (int) ($refund->amount ?? 0);
+            $refundedPence += $amount;
 
-            PaymentRefund::create([
-                'payment_id' => $payment->id,
-                'stripe_refund_id' => $refund->id,
-                'amount_pence' => (int) ($refund->amount ?? 0),
-                'currency' => $refund->currency ?? 'gbp',
-                'status' => $refund->status ?? 'pending',
-                'reason' => $refund->reason ?? null,
-                'processed_at' => $refund->status === 'succeeded' ? now() : null,
-            ]);
+            PaymentRefund::updateOrCreate(
+                ['stripe_refund_id' => $refund->id],
+                [
+                    'payment_id' => $payment->id,
+                    'amount_pence' => $amount,
+                    'currency' => $refund->currency ?? 'gbp',
+                    'status' => $refund->status ?? 'pending',
+                    'reason' => $refund->reason ?? null,
+                    'processed_at' => $refund->status === 'succeeded' ? now() : null,
+                ]
+            );
         }
 
         $payment->update([
             'refunded_amount_pence' => $refundedPence,
             'status' => $refundedPence >= $payment->amount_pence ? PaymentStatus::Refunded : PaymentStatus::PartiallyRefunded,
+        ]);
+
+        $logs->record('payment.refunded', $payment, [
+            'agreement_number' => $payment->agreement->agreement_number,
+            'amount_pence' => $refundedPence,
         ]);
 
         $latestRefund = $payment->refunds()->latest('id')->first();
@@ -375,6 +483,148 @@ class StripeWebhookController extends Controller
                 'payment.refunded',
                 $payment->agreement
             );
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // refund.created
+    // ---------------------------------------------------------------
+
+    private function handleRefundCreated($event): void
+    {
+        $refundObj = $event->data->object;
+
+        $paymentIntentId = is_string($refundObj->payment_intent)
+            ? $refundObj->payment_intent
+            : null;
+
+        if (! $paymentIntentId) {
+            return;
+        }
+
+        $payment = Payment::where('stripe_payment_intent_id', $paymentIntentId)->first();
+
+        if (! $payment) {
+            return;
+        }
+
+        $amount = (int) ($refundObj->amount ?? 0);
+
+        $refund = PaymentRefund::updateOrCreate(
+            ['stripe_refund_id' => $refundObj->id],
+            [
+                'payment_id' => $payment->id,
+                'amount_pence' => $amount,
+                'currency' => $refundObj->currency ?? 'gbp',
+                'status' => $refundObj->status ?? 'pending',
+                'reason' => $refundObj->reason ?? null,
+                'processed_at' => $refundObj->status === 'succeeded' ? now() : null,
+            ]
+        );
+
+        if ($refundObj->status === 'succeeded') {
+            $this->syncPaymentRefundStatus($payment);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // refund.updated
+    // ---------------------------------------------------------------
+
+    private function handleRefundUpdated($event): void
+    {
+        $refundObj = $event->data->object;
+
+        $refund = PaymentRefund::where('stripe_refund_id', $refundObj->id)->first();
+
+        if (! $refund) {
+            return;
+        }
+
+        $refund->update([
+            'status' => $refundObj->status ?? $refund->status,
+            'amount_pence' => isset($refundObj->amount) ? (int) $refundObj->amount : $refund->amount_pence,
+            'currency' => $refundObj->currency ?? $refund->currency,
+            'reason' => $refundObj->reason ?? $refund->reason,
+            'failure_code' => $refundObj->failure_code ?? $refund->failure_code,
+            'failure_message' => $refundObj->failure_message ?? $refund->failure_message,
+            'processed_at' => $refundObj->status === 'succeeded' ? now() : ($refund->processed_at),
+        ]);
+
+        $this->syncPaymentRefundStatus($refund->payment);
+    }
+
+    // ---------------------------------------------------------------
+    // refund.failed
+    // ---------------------------------------------------------------
+
+    private function handleRefundFailed($event, ActivityLogService $logs): void
+    {
+        $refundObj = $event->data->object;
+
+        $refund = PaymentRefund::where('stripe_refund_id', $refundObj->id)->first();
+
+        if (! $refund) {
+            return;
+        }
+
+        $refund->update([
+            'status' => 'failed',
+            'failure_code' => $refundObj->failure_code ?? null,
+            'failure_message' => $refundObj->failure_message ?? null,
+            'processed_at' => null,
+        ]);
+
+        $payment = $refund->payment;
+        $this->syncPaymentRefundStatus($payment);
+
+        $logs->record('payment.refund_failed', $refund, [
+            'agreement_number' => $payment->agreement->agreement_number,
+            'refund_id' => $refund->id,
+            'failure_code' => $refundObj->failure_code ?? null,
+            'failure_message' => $refundObj->failure_message ?? null,
+        ]);
+
+        $link = $payment->agreement->activeLink;
+
+        if ($link) {
+            app(EmailService::class)->send(
+                new PaymentRefundFailedMail($payment->agreement, $refund, $link),
+                $payment->agreement->client_email,
+                'payment.refund_failed',
+                $payment->agreement
+            );
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Shared helpers
+    // ---------------------------------------------------------------
+
+    private function syncPaymentRefundStatus(Payment $payment): void
+    {
+        $successfulRefunded = $payment->refunds()
+            ->where('status', 'succeeded')
+            ->sum('amount_pence');
+
+        if ($successfulRefunded <= 0 && $payment->status !== PaymentStatus::Succeeded) {
+            $payment->update([
+                'refunded_amount_pence' => 0,
+                'status' => PaymentStatus::Succeeded,
+            ]);
+
+            return;
+        }
+
+        if ($successfulRefunded > 0) {
+            $status = $successfulRefunded >= $payment->amount_pence
+                ? PaymentStatus::Refunded
+                : PaymentStatus::PartiallyRefunded;
+
+            $payment->update([
+                'refunded_amount_pence' => $successfulRefunded,
+                'status' => $status,
+            ]);
         }
     }
 

@@ -188,9 +188,57 @@
                         </tbody>
                     </table>
 
-                <div class="border-t border-slate-800 px-4 py-3">
-                    {{ $agreements->links() }}
+            {{-- Pagination Footer --}}
+            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-purple-500/10 px-4 py-3">
+                <div class="text-xs text-slate-500">
+                    Showing {{ $agreements->firstItem() ?? 1 }} to {{ $agreements->lastItem() ?? $agreements->count() }} of {{ $agreements->total() ?? $agreements->count() }} agreements
                 </div>
+
+                <div class="flex items-center gap-3">
+                    @if (method_exists($agreements, 'hasPages') && $agreements->hasPages())
+                        <div class="flex items-center gap-1">
+                            <button wire:click="gotoPage(1)" @if ($agreements->onFirstPage()) disabled @endif
+                                    class="rounded-lg bg-slate-900/60 p-1.5 text-slate-400 ring-1 ring-inset ring-purple-500/20 disabled:opacity-40">
+                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5"/></svg>
+                            </button>
+                            <button wire:click="previousPage" @if ($agreements->onFirstPage()) disabled @endif
+                                    class="rounded-lg bg-slate-900/60 p-1.5 text-slate-400 ring-1 ring-inset ring-purple-500/20 disabled:opacity-40">
+                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+                            </button>
+
+                            @php
+                                $current = $agreements->currentPage();
+                                $last = $agreements->lastPage();
+                                $start = max(1, $current - 2);
+                                $end = min($last, $current + 2);
+                            @endphp
+
+                            @for ($p = $start; $p <= $end; $p++)
+                                <button wire:click="gotoPage({{ $p }})"
+                                        @class([
+                                            'flex h-7 w-7 items-center justify-center rounded-lg text-xs font-semibold',
+                                            'bg-purple-600 text-white shadow-lg shadow-purple-900/40' => $current === $p,
+                                            'bg-slate-900/60 text-slate-300 ring-1 ring-inset ring-purple-500/20 hover:bg-slate-800' => $current !== $p,
+                                        ])>{{ $p }}</button>
+                            @endfor
+
+                            @if ($end < $last)
+                                <span class="px-1 text-slate-500">…</span>
+                                <button wire:click="gotoPage({{ $last }})" class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900/60 text-xs font-semibold text-slate-300 ring-1 ring-inset ring-purple-500/20 hover:bg-slate-800">{{ $last }}</button>
+                            @endif
+
+                            <button wire:click="nextPage" @if (! $agreements->hasMorePages()) disabled @endif
+                                    class="rounded-lg bg-slate-900/60 p-1.5 text-slate-400 ring-1 ring-inset ring-purple-500/20 disabled:opacity-40">
+                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+                            </button>
+                            <button wire:click="gotoPage({{ $last }})" @if (! $agreements->hasMorePages()) disabled @endif
+                                    class="rounded-lg bg-slate-900/60 p-1.5 text-slate-400 ring-1 ring-inset ring-purple-500/20 disabled:opacity-40">
+                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 4.5l7.5 7.5-7.5 7.5m6-15l7.5 7.5-7.5 7.5"/></svg>
+                            </button>
+                        </div>
+                    @endif
+                </div>
+            </div>
             @endif
         </div>
     @endif

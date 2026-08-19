@@ -208,22 +208,32 @@
                             <td class="px-3 py-4">
                                 <div class="flex items-center gap-2">
                                     <div class="flex -space-x-2">
-                                        @for ($i = 0; $i < min(3, $projects->count() ?: 3); $i++)
-                                            <div class="h-10 w-14 shrink-0 overflow-hidden rounded-md border-2 border-slate-900 bg-gradient-to-br from-slate-700 to-slate-900 ring-1 ring-purple-500/20">
-                                                @if (isset($projects[$i]) && $projects[$i]->thumbnail)
-                                                    <img src="{{ $projects[$i]->thumbnail }}" alt="" class="h-full w-full object-cover"/>
-                                                @else
-                                                    <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-900/40 to-slate-950">
-                                                        <svg class="h-4 w-4 text-purple-500/40" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"/>
-                                                        </svg>
-                                                    </div>
-                                                @endif
+                                        @if ($projects->count() > 0)
+                                            @for ($i = 0; $i < min(3, $projects->count()); $i++)
+                                                <div class="h-10 w-14 shrink-0 overflow-hidden rounded-md border-2 border-slate-900 bg-gradient-to-br from-slate-700 to-slate-900 ring-1 ring-purple-500/20">
+                                                    @if ($projects[$i]->picture_path)
+                                                        <img src="{{ $projects[$i]->thumbnail }}" alt="{{ $projects[$i]->title }}" class="h-full w-full object-cover"/>
+                                                    @else
+                                                        <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-900/40 to-slate-950">
+                                                            <svg class="h-4 w-4 text-purple-500/40" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"/>
+                                                            </svg>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @endfor
+                                        @else
+                                            <div class="h-10 w-14 shrink-0 overflow-hidden rounded-md border-2 border-dashed border-slate-700 bg-gradient-to-br from-slate-800 to-slate-900 ring-1 ring-purple-500/10">
+                                                <div class="flex h-full w-full items-center justify-center">
+                                                    <svg class="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"/>
+                                                    </svg>
+                                                </div>
                                             </div>
-                                        @endfor
+                                        @endif
                                     </div>
                                     <span class="inline-flex items-center rounded-md bg-purple-500/15 px-2 py-0.5 text-[10px] font-semibold text-purple-300 ring-1 ring-inset ring-purple-500/30">
-                                        {{ $projects->count() ?: 3 }} Projects
+                                        {{ $projects->count() }} {{ Str::plural('Project', $projects->count()) }}
                                     </span>
                                 </div>
                             </td>
@@ -386,61 +396,54 @@
 
     <div class="space-y-3">
 
-        {{-- Uploaded Projects --}}
+        {{-- Empty state when no images --}}
+        @if (count($projects) === 0)
+            <div class="flex items-center gap-3 rounded-lg border border-dashed border-slate-700 bg-slate-900/30 p-3">
+                <div class="flex h-16 w-20 shrink-0 items-center justify-center rounded-lg bg-slate-800/60 ring-1 ring-inset ring-slate-700/50">
+                    <svg class="h-6 w-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-400">No project images yet</p>
+                    <p class="text-[11px] text-slate-500">Upload images to showcase recent work for this service.</p>
+                </div>
+            </div>
+        @endif
+
+        {{-- Uploaded Projects Grid --}}
         @if (count($projects) > 0)
-            <div class="flex flex-wrap gap-2">
+            <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 @foreach ($projects as $i => $proj)
-                    <div
-                        class="group relative flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-1.5 pr-2"
-                    >
+                    <div class="group relative overflow-hidden rounded-lg border border-emerald-500/20 bg-emerald-500/5">
                         @if (!empty($proj['picture_path']))
                             <img
                                 src="{{ Storage::disk('public')->url($proj['picture_path']) }}"
                                 alt="{{ $proj['title'] ?? 'Project' }}"
-                                class="h-10 w-14 shrink-0 rounded-lg object-cover ring-1 ring-emerald-500/30"
+                                class="h-20 w-full object-cover"
                             />
                         @else
-                            <div class="flex h-10 w-14 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20">
-                                <svg
-                                    class="h-4 w-4 text-emerald-400"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.8"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"
-                                    />
+                            <div class="flex h-20 w-full items-center justify-center bg-slate-800/60">
+                                <svg class="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"/>
                                 </svg>
                             </div>
                         @endif
-
-                        <span class="max-w-[120px] truncate text-xs font-medium text-emerald-300">
-                            {{ $proj['title'] ?? 'Project' }}
-                        </span>
-
-                        <button
-                            type="button"
-                            wire:click="removeProject({{ $i }})"
-                            class="ml-0.5 rounded-full p-1 text-emerald-400 transition hover:bg-red-500/20 hover:text-red-300"
-                            title="Remove"
-                        >
-                            <svg
-                                class="h-3.5 w-3.5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="2"
-                                stroke="currentColor"
+                        <div class="flex items-center justify-between px-2 py-1.5">
+                            <span class="max-w-[80px] truncate text-[11px] font-medium text-emerald-300">
+                                {{ $proj['title'] ?? 'Image' }}
+                            </span>
+                            <button
+                                type="button"
+                                wire:click="removeProject({{ $i }})"
+                                class="rounded p-0.5 text-slate-500 transition hover:bg-red-500/20 hover:text-red-300"
+                                title="Remove"
                             >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
+                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 @endforeach
             </div>
@@ -451,24 +454,12 @@
             <label
                 class="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-500/30 bg-slate-900/40 px-4 py-3 transition hover:border-emerald-500/60 hover:bg-slate-900/60"
             >
-                <svg
-                    class="h-5 w-5 text-emerald-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M12 4.5v15m7.5-7.5h-15"
-                    />
+                <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
                 </svg>
-
                 <span class="text-xs font-medium text-slate-300">
-                    Add Project Images
+                    {{ count($projects) > 0 ? 'Add More Images' : 'Upload Project Images' }}
                 </span>
-
                 <input
                     type="file"
                     x-ref="projectFileInput"
@@ -488,30 +479,12 @@
         </div>
 
         {{-- Uploading --}}
-        <div
-            wire:loading
-            wire:target="processUploadedImages"
-            class="flex items-center gap-2 text-xs text-emerald-400"
-        >
-            <svg
-                class="h-4 w-4 animate-spin"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M4 12a8 8 0 018-8"
-                />
+        <div wire:loading wire:target="processUploadedImages" class="flex items-center gap-2 text-xs text-emerald-400">
+            <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 018-8"/>
             </svg>
-
             Uploading project images...
         </div>
-
-        @error('newProjectImage')
-            <p class="text-xs text-red-400">{{ $message }}</p>
-        @enderror
     </div>
 </div>
 

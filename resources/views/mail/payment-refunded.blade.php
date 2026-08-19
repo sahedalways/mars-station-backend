@@ -45,13 +45,13 @@
                 <td width="33%" style="padding: 8px 0; vertical-align: top;">
                     <p style="margin: 0; color: #6b7280; font-size: 12px;">Original Payment</p>
                     <p style="margin: 2px 0 0; color: #111827; font-size: 13px; font-weight: 600;">
-                        {{ $agreement->currency_symbol ?? '£' }}{{ number_format($refund->original_amount ?? 0, 2) }}
+                        {{ $refund->payment->formattedAmount() }}
                     </p>
                 </td>
                 <td width="33%" style="padding: 8px 0; vertical-align: top;">
                     <p style="margin: 0; color: #6b7280; font-size: 12px;">Refund Amount</p>
                     <p style="margin: 2px 0 0; color: #111827; font-size: 13px; font-weight: 600;">
-                        {{ $agreement->currency_symbol ?? '£' }}{{ number_format($refund->amount ?? 0, 2) }}
+                        {{ $refund->formattedAmount() }}
                     </p>
                 </td>
             </tr>

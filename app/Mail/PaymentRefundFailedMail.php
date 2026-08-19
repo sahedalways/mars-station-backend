@@ -4,35 +4,38 @@ namespace App\Mail;
 
 use App\Models\Agreement;
 use App\Models\AgreementLink;
+use App\Models\Payment;
+use App\Models\PaymentRefund;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class AgreementReminderMail extends Mailable
+class PaymentRefundFailedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public function __construct(
         public Agreement $agreement,
+        public PaymentRefund $refund,
         public AgreementLink $link,
-    ) {
-    }
+    ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Reminder: Agreement {$this->agreement->agreement_number} — {$this->agreement->title}",
+            subject: "Refund Failed — {$this->agreement->title}",
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'mail.agreement-reminder',
+            view: 'mail.payment-refund-failed',
             with: [
                 'agreement' => $this->agreement,
+                'refund' => $this->refund,
                 'link' => $this->link,
             ],
         );

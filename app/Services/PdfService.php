@@ -26,6 +26,7 @@ class PdfService
             ->width(794)
             ->height(1123)
             ->margins(0, 0, 0, 0)
+            ->printBackground()
             ->pdf();
     }
 

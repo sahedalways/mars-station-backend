@@ -181,7 +181,9 @@ class AgreementEdit extends Component
             $this->dispatch('toast', message: 'Agreement updated.', type: 'success');
         }
 
-        $this->redirect(route('admin.agreements.show', $this->agreement), navigate: true);
+        $redirectUrl = route('admin.agreements.show', $this->agreement);
+
+        $this->redirect($redirectUrl, navigate: true);
     }
 
     private function buildData(): array

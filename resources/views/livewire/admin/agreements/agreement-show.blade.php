@@ -434,7 +434,7 @@
 
             {{-- Agreement Preview --}}
             <div class="rounded-2xl border border-purple-500/15 bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-5 shadow-lg shadow-purple-950/30 backdrop-blur-sm">
-                <div class="mb-3 flex items-center justify-between">
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
                         <svg class="h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
@@ -455,184 +455,177 @@
                 {{-- Preview content --}}
                 <div class="rounded-xl border border-purple-500/15 bg-white" id="agreement-preview-wrap" style="max-height: 520px; overflow-y: auto;">
                     <style>
-                        #agreement-preview-wrap .doc-wrapper {
-                            max-width: 100%;
-                            margin: 0;
-                            background: #ffffff;
-                            border-radius: 0;
-                            overflow: hidden;
-                            border: none;
-                            box-shadow: none;
-                            position: relative;
-                            border-top: 3px solid #7c3aed;
+                        #agreement-preview-wrap .ap-doc-wrapper {
+                            background: #ffffff; border-radius: 0; overflow: hidden;
+                            border: none; position: relative;
+                            border-top: 4px solid #7c3aed;
                         }
-                        #agreement-preview-wrap .doc-wrapper::before {
-                            content: '';
-                            position: absolute;
-                            top: 18%;
-                            right: 2%;
-                            transform: none;
-                            width: 360px;
-                            height: 360px;
-                            background: url('{{ asset('watermark-logo.png') }}') no-repeat center center;
-                            background-size: contain;
-                            opacity: 0.04;
-                            pointer-events: none;
-                            z-index: 1;
+                        #agreement-preview-wrap .ap-doc-wrapper::before {
+                            content: ''; position: absolute; top: 18%; right: 2%; transform: none;
+                            width: 420px; height: 420px;
+                            background: url('{{ asset("watermark-logo.png") }}') no-repeat center center;
+                            background-size: contain; opacity: 0.04; pointer-events: none; z-index: 1;
                         }
-                        #agreement-preview-wrap .doc-wrapper > * { position: relative; z-index: 2; }
-                        #agreement-preview-wrap .pw-header {
-                            padding: 22px 28px 20px;
-                            border-bottom: 3px solid #4c1d95;
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            gap: 16px;
+                        #agreement-preview-wrap .ap-doc-wrapper > * { position: relative; z-index: 2; }
+                        #agreement-preview-wrap .ap-header {
+                            padding: 28px 40px 24px; border-bottom: 3px solid #4c1d95;
+                            display: flex; align-items: center; justify-content: space-between; gap: 24px;
                             background: linear-gradient(180deg, #f9f7ff 0%, #ffffff 100%);
                         }
-                        #agreement-preview-wrap .pw-brand img { display: block; max-width: 280px; height: auto; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05)); }
-                        #agreement-preview-wrap .pw-meta {
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            gap: 10px 18px;
-                            min-width: 280px;
-                            max-width: 380px;
+                        #agreement-preview-wrap .ap-brand img { display: block; max-width: 300px; height: auto; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05)); }
+                        #agreement-preview-wrap .ap-meta {
+                            display: grid; grid-template-columns: 1fr 1fr; gap: 10px 22px;
+                            min-width: 320px; max-width: 420px;
                         }
-                        #agreement-preview-wrap .pw-meta-row { display: flex; gap: 10px; align-items: flex-start; }
-                        #agreement-preview-wrap .pw-meta-icon {
-                            width: 28px; height: 28px; background: linear-gradient(135deg, #ede9fe, #ddd6fe); border-radius: 8px;
+                        #agreement-preview-wrap .ap-meta-row { display: flex; gap: 10px; align-items: flex-start; }
+                        #agreement-preview-wrap .ap-meta-icon {
+                            width: 30px; height: 30px; background: linear-gradient(135deg, #ede9fe, #ddd6fe); border-radius: 8px;
                             display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #4c1d95;
                             box-shadow: 0 1px 3px rgba(76,29,149,0.1);
                         }
-                        #agreement-preview-wrap .pw-meta-icon svg { width: 13px; height: 13px; }
-                        #agreement-preview-wrap .pw-meta-label { font-size: 9px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
-                        #agreement-preview-wrap .pw-meta-value { font-size: 11px; color: #111827; font-weight: 600; }
-                        #agreement-preview-wrap .pw-status {
-                            display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px;
-                            font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+                        #agreement-preview-wrap .ap-meta-icon svg { width: 14px; height: 14px; }
+                        #agreement-preview-wrap .ap-meta-label { font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
+                        #agreement-preview-wrap .ap-meta-value { font-size: 12px; color: #111827; font-weight: 600; }
+                        #agreement-preview-wrap .ap-status {
+                            display: inline-flex; align-items: center; gap: 4px; padding: 3px 12px; border-radius: 999px;
+                            font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
                         }
-                        #agreement-preview-wrap .pw-status-signed { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534; border: 1px solid #86efac; box-shadow: 0 1px 3px rgba(22,101,52,0.1); }
-                        #agreement-preview-wrap .pw-status-pending { background: linear-gradient(135deg, #fef9c3, #fde68a); color: #854d0e; border: 1px solid #fcd34d; box-shadow: 0 1px 3px rgba(133,77,14,0.1); }
-                        #agreement-preview-wrap .pw-status-expired { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; border: 1px solid #fca5a5; box-shadow: 0 1px 3px rgba(153,27,27,0.1); }
-                        #agreement-preview-wrap .pw-status-default { background: linear-gradient(135deg, #f3f4f6, #e5e7eb); color: #374151; border: 1px solid #d1d5db; }
-                        #agreement-preview-wrap .pw-body { padding: 24px 28px 0; }
-                        #agreement-preview-wrap .pw-section-label {
-                            font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #4c1d95;
+                        #agreement-preview-wrap .ap-status-signed { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534; border: 1px solid #86efac; box-shadow: 0 1px 3px rgba(22,101,52,0.1); }
+                        #agreement-preview-wrap .ap-status-pending { background: linear-gradient(135deg, #fef9c3, #fde68a); color: #854d0e; border: 1px solid #fcd34d; box-shadow: 0 1px 3px rgba(133,77,14,0.1); }
+                        #agreement-preview-wrap .ap-status-expired { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; border: 1px solid #fca5a5; box-shadow: 0 1px 3px rgba(153,27,27,0.1); }
+                        #agreement-preview-wrap .ap-status-default { background: linear-gradient(135deg, #f3f4f6, #e5e7eb); color: #374151; border: 1px solid #d1d5db; }
+                        #agreement-preview-wrap .ap-body { padding: 36px 40px 0; }
+                        #agreement-preview-wrap .ap-section-label {
+                            font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: #4c1d95;
                             font-weight: 800; border-left: 4px solid #4c1d95; padding-left: 12px;
-                            margin: 24px 0 12px; font-family: 'Inter', sans-serif;
+                            margin: 32px 0 14px; font-family: 'Inter', sans-serif;
                         }
-                        #agreement-preview-wrap .pw-intro { font-size: 11px; line-height: 1.75; color: #374151; margin: 0 0 6px; }
-                        #agreement-preview-wrap .pw-sub-intro { font-size: 10px; color: #6b7280; font-style: italic; margin: 0 0 16px; }
-                        #agreement-preview-wrap .pw-block { margin-bottom: 16px; }
-                        #agreement-preview-wrap .pw-block h3 { font-size: 11px; color: #4c1d95; font-weight: 800; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.3px; }
-                        #agreement-preview-wrap .pw-block h3 .num {
+                        #agreement-preview-wrap .ap-intro { font-size: 13px; line-height: 1.75; color: #374151; margin: 0 0 8px; }
+                        #agreement-preview-wrap .ap-sub-intro { font-size: 12px; color: #6b7280; font-style: italic; margin: 0 0 20px; }
+                        #agreement-preview-wrap .ap-block { margin-bottom: 22px; }
+                        #agreement-preview-wrap .ap-block h3 { font-size: 12px; color: #4c1d95; font-weight: 800; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.3px; }
+                        #agreement-preview-wrap .ap-block h3 .num {
                             display: inline-flex; align-items: center; justify-content: center;
-                            width: 22px; height: 22px; background: linear-gradient(135deg, #7c3aed, #4c1d95); color: #fff;
-                            border-radius: 50%; font-size: 9px; font-weight: 800;
+                            width: 26px; height: 26px; background: linear-gradient(135deg, #7c3aed, #4c1d95); color: #fff;
+                            border-radius: 50%; font-size: 10px; font-weight: 800;
                             box-shadow: 0 2px 6px rgba(76,29,149,0.25);
                         }
-                        #agreement-preview-wrap .pw-block p { font-size: 11px; line-height: 1.65; color: #374151; margin: 0 0 4px; }
-                        #agreement-preview-wrap .pw-acceptance {
+                        #agreement-preview-wrap .ap-block p { font-size: 12.5px; line-height: 1.7; color: #374151; margin: 0 0 6px; }
+                        #agreement-preview-wrap .ap-content-area { font-size: 12.5px; line-height: 1.7; color: #000000; }
+                        #agreement-preview-wrap .ap-content-area * { color: #000000 !important; }
+                        #agreement-preview-wrap .ap-content-area h1,
+                        #agreement-preview-wrap .ap-content-area h2,
+                        #agreement-preview-wrap .ap-content-area h3,
+                        #agreement-preview-wrap .ap-content-area h4 { color: #000000 !important; margin: 14px 0 8px; font-weight: 700; }
+                        #agreement-preview-wrap .ap-content-area strong,
+                        #agreement-preview-wrap .ap-content-area b { font-weight: 700; }
+                        #agreement-preview-wrap .ap-content-area ul,
+                        #agreement-preview-wrap .ap-content-area ol { padding-left: 20px; margin: 8px 0; }
+                        #agreement-preview-wrap .ap-content-area li { margin-bottom: 4px; }
+                        #agreement-preview-wrap .ap-content-area p { margin: 0 0 6px; }
+                        #agreement-preview-wrap .ap-content-area td,
+                        #agreement-preview-wrap .ap-content-area th,
+                        #agreement-preview-wrap .ap-content-area span,
+                        #agreement-preview-wrap .ap-content-area a,
+                        #agreement-preview-wrap .ap-content-area em,
+                        #agreement-preview-wrap .ap-content-area i { color: #000000 !important; }
+                        #agreement-preview-wrap .ap-acceptance {
                             background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #f5f3ff 100%);
-                            border: 2px solid #c4b5fd; border-radius: 14px; padding: 22px 26px;
-                            margin: 24px 28px 0; display: flex; gap: 20px; align-items: flex-start;
+                            border: 2px solid #c4b5fd; border-radius: 14px; padding: 28px 32px;
+                            margin: 28px 40px 0; display: flex; gap: 24px; align-items: flex-start;
                             box-shadow: 0 4px 16px rgba(76,29,149,0.08), inset 0 2px 12px rgba(76,29,149,0.04);
                             position: relative; overflow: hidden;
                         }
-                        #agreement-preview-wrap .pw-acceptance::before {
-                            content: '';
-                            position: absolute;
-                            top: 50%;
-                            right: 16px;
-                            transform: translateY(-50%);
-                            width: 160px; height: 160px;
-                            background: url('{{ asset('watermark-logo.png') }}') no-repeat center center;
-                            background-size: contain;
-                            opacity: 0.07; pointer-events: none;
+                        #agreement-preview-wrap .ap-acceptance::before {
+                            content: ''; position: absolute; top: 50%; right: 20px;
+                            transform: translateY(-50%); width: 180px; height: 180px;
+                            background: url('{{ asset("watermark-logo.png") }}') no-repeat center center;
+                            background-size: contain; opacity: 0.07; pointer-events: none;
                         }
-                        #agreement-preview-wrap .pw-acceptance > * { position: relative; z-index: 1; }
-                        #agreement-preview-wrap .pw-acceptance-icon {
-                            width: 44px; height: 44px; background: linear-gradient(135deg, #7c3aed, #4c1d95);
-                            border: none; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-                            flex-shrink: 0; color: #fff; box-shadow: 0 4px 12px rgba(76,29,149,0.25);
+                        #agreement-preview-wrap .ap-acceptance > * { position: relative; z-index: 1; }
+                        #agreement-preview-wrap .ap-acceptance-icon {
+                            width: 56px; height: 56px; background: linear-gradient(135deg, #7c3aed, #4c1d95);
+                            border: none; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+                            flex-shrink: 0; color: #fff; box-shadow: 0 6px 20px rgba(76,29,149,0.3);
                         }
-                        #agreement-preview-wrap .pw-acceptance-icon svg { width: 20px; height: 20px; }
-                        #agreement-preview-wrap .pw-acceptance h4 { font-size: 12px; color: #1e1b4b; margin: 0 0 10px; font-weight: 800; letter-spacing: 0.5px; }
-                        #agreement-preview-wrap .pw-sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; }
-                        #agreement-preview-wrap .pw-sig-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; margin-bottom: 2px; }
-                        #agreement-preview-wrap .pw-sig-value { font-size: 11px; color: #111827; font-weight: 600; }
-                        #agreement-preview-wrap .pw-sig-note {
+                        #agreement-preview-wrap .ap-acceptance-icon svg { width: 26px; height: 26px; }
+                        #agreement-preview-wrap .ap-acceptance h4 { font-size: 15px; color: #1e1b4b; margin: 0 0 14px; font-weight: 800; letter-spacing: 0.8px; }
+                        #agreement-preview-wrap .ap-sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 28px; }
+                        #agreement-preview-wrap .ap-sig-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; margin-bottom: 2px; }
+                        #agreement-preview-wrap .ap-sig-value { font-size: 12px; color: #111827; font-weight: 600; }
+                        #agreement-preview-wrap .ap-sig-note {
                             margin-top: 14px; padding-top: 12px; border-top: 1px dashed #c4b5fd;
-                            font-size: 10px; color: #4c1d95; font-weight: 600;
+                            font-size: 10.5px; color: #4c1d95; font-weight: 600;
                             display: flex; align-items: center; gap: 6px;
                         }
-                        #agreement-preview-wrap .pw-footer {
-                            background: linear-gradient(180deg, #1e1b4b 0%, #0f0524 100%); color: #fff; padding: 0; margin-top: 28px;
-                            position: relative; overflow: hidden; border-radius: 0 0 0 0;
+                        #agreement-preview-wrap .ap-footer {
+                            background: linear-gradient(180deg, #1e1b4b 0%, #0f0524 100%); color: #fff;
+                            padding: 0; margin-top: 32px; position: relative; overflow: hidden;
                         }
-                        #agreement-preview-wrap .pw-footer::before {
-                            content: '';
-                            position: absolute;
-                            top: -30px; right: -30px;
-                            width: 160px; height: 160px;
-                            background: url('{{ asset('watermark-logo.png') }}') no-repeat center center;
-                            background-size: contain;
-                            opacity: 0.04; pointer-events: none;
+                        #agreement-preview-wrap .ap-footer::before {
+                            content: ''; position: absolute; top: -30px; right: -30px;
+                            width: 180px; height: 180px;
+                            background: url('{{ asset("watermark-logo.png") }}') no-repeat center center;
+                            background-size: contain; opacity: 0.04; pointer-events: none;
                         }
-                        #agreement-preview-wrap .pw-footer > * { position: relative; z-index: 1; }
-                        #agreement-preview-wrap .pw-footer-inner { padding: 28px 28px 0; }
-                        #agreement-preview-wrap .pw-footer-logo { text-align: center; margin-bottom: 18px; }
-                        #agreement-preview-wrap .pw-footer-logo img { height: 38px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; }
-                        #agreement-preview-wrap .pw-footer-divider {
-                            height: 1px; margin: 0 0 16px;
+                        #agreement-preview-wrap .ap-footer > * { position: relative; z-index: 1; }
+                        #agreement-preview-wrap .ap-footer-inner { padding: 32px 40px 0; }
+                        #agreement-preview-wrap .ap-footer-logo { text-align: center; margin-bottom: 20px; width: 100%; }
+                        #agreement-preview-wrap .ap-footer-logo img { display: block; margin: 0 auto; height: 42px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; }
+                        #agreement-preview-wrap .ap-footer-divider {
+                            height: 1px; margin: 0 0 18px;
                             background: linear-gradient(90deg, transparent, rgba(167,139,250,0.25), transparent);
                         }
-                        #agreement-preview-wrap .pw-footer-strip {
-                            display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
-                            font-size: 9.5px; color: #c4b5fd;
+                        #agreement-preview-wrap .ap-footer-strip {
+                            display: flex; justify-content: center; gap: 28px; flex-wrap: wrap;
+                            font-size: 10.5px; color: #c4b5fd;
                         }
-                        #agreement-preview-wrap .pw-footer-strip strong { color: #e9d5ff; font-weight: 700; }
-                        #agreement-preview-wrap .pw-footer-disclaimer {
-                            margin-top: 16px; padding: 12px 16px;
-                            background: rgba(255,255,255,0.03); border-radius: 6px;
-                            font-size: 8.5px; color: #8b7fc7; line-height: 1.65; text-align: center;
+                        #agreement-preview-wrap .ap-footer-strip strong { color: #e9d5ff; font-weight: 700; }
+                        #agreement-preview-wrap .ap-footer-disclaimer {
+                            margin-top: 18px; padding: 14px 20px;
+                            background: rgba(255,255,255,0.03); border-radius: 8px;
+                            font-size: 9px; color: #8b7fc7; line-height: 1.65; text-align: center;
                         }
-                        #agreement-preview-wrap .pw-footer-bottom {
-                            margin-top: 16px; padding: 12px 28px;
+                        #agreement-preview-wrap .ap-footer-bottom {
+                            margin-top: 18px; padding: 14px 40px;
                             background: rgba(0,0,0,0.25);
                             display: flex; justify-content: space-between; align-items: center;
-                            font-size: 8.5px; color: #7c6daa;
+                            font-size: 9px; color: #7c6daa;
                         }
-                        #agreement-preview-wrap .pw-footer-bottom a { color: #a78bfa; text-decoration: none; transition: color 0.2s; }
-                        #agreement-preview-wrap .pw-footer-bottom a:hover { color: #c4b5fd; }
-                        #agreement-preview-wrap .pw-footer-links { display: flex; gap: 16px; align-items: center; }
-                        #agreement-preview-wrap .pw-footer-social { display: flex; gap: 10px; align-items: center; }
-                        #agreement-preview-wrap .pw-footer-social a {
+                        #agreement-preview-wrap .ap-footer-bottom a { color: #a78bfa; text-decoration: none; transition: color 0.2s; }
+                        #agreement-preview-wrap .ap-footer-bottom a:hover { color: #c4b5fd; }
+                        #agreement-preview-wrap .ap-footer-links { display: flex; gap: 18px; align-items: center; }
+                        #agreement-preview-wrap .ap-footer-social { display: flex; gap: 10px; align-items: center; }
+                        #agreement-preview-wrap .ap-footer-social a {
                             display: inline-flex; align-items: center; justify-content: center;
-                            width: 22px; height: 22px; border-radius: 50%;
+                            width: 24px; height: 24px; border-radius: 50%;
                             background: rgba(167,139,250,0.12); color: #a78bfa;
-                            transition: all 0.2s;
                         }
-                        #agreement-preview-wrap .pw-footer-social a:hover { background: rgba(167,139,250,0.25); color: #c4b5fd; }
-                        #agreement-preview-wrap .pw-footer-social a svg { width: 11px; height: 11px; }
-                        #agreement-preview-wrap .pw-content-area { font-size: 11px; line-height: 1.7; color: #000000; }
-                        #agreement-preview-wrap .pw-content-area * { color: #000000 !important; }
-                        #agreement-preview-wrap .pw-content-area h1,
-                        #agreement-preview-wrap .pw-content-area h2,
-                        #agreement-preview-wrap .pw-content-area h3,
-                        #agreement-preview-wrap .pw-content-area h4 { color: #000000 !important; margin: 12px 0 6px; font-weight: 700; }
-                        #agreement-preview-wrap .pw-content-area strong,
-                        #agreement-preview-wrap .pw-content-area b { font-weight: 700; }
-                        #agreement-preview-wrap .pw-content-area ul,
-                        #agreement-preview-wrap .pw-content-area ol { padding-left: 18px; margin: 6px 0; }
-                        #agreement-preview-wrap .pw-content-area li { margin-bottom: 3px; }
-                        #agreement-preview-wrap .pw-content-area p { margin: 0 0 6px; }
-                        #agreement-preview-wrap .pw-content-area td,
-                        #agreement-preview-wrap .pw-content-area th,
-                        #agreement-preview-wrap .pw-content-area span,
-                        #agreement-preview-wrap .pw-content-area a,
-                        #agreement-preview-wrap .pw-content-area em,
-                        #agreement-preview-wrap .pw-content-area i { color: #000000 !important; }
+                        #agreement-preview-wrap .ap-footer-social a svg { width: 12px; height: 12px; }
+                        #agreement-preview-wrap .ap-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid #e9e5f5; }
+                        #agreement-preview-wrap .ap-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                        #agreement-preview-wrap .ap-table thead { background: linear-gradient(135deg, #f5f3ff, #ede9fe); }
+                        #agreement-preview-wrap .ap-table th { padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #4c1d95; border-bottom: 2px solid #e9e5f5; }
+                        #agreement-preview-wrap .ap-table td { padding: 12px 16px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+                        #agreement-preview-wrap .ap-table tbody tr:last-child td { border-bottom: none; }
+
+                        @media (max-width: 640px) {
+                            #agreement-preview-wrap .ap-header {
+                                flex-direction: column; align-items: flex-start; gap: 16px; padding: 20px 20px 18px;
+                            }
+                            #agreement-preview-wrap .ap-brand img { max-width: 180px; }
+                            #agreement-preview-wrap .ap-meta { grid-template-columns: 1fr; min-width: 0; max-width: 100%; gap: 8px; }
+                            #agreement-preview-wrap .ap-body { padding: 24px 20px 0; }
+                            #agreement-preview-wrap .ap-acceptance { flex-direction: column; align-items: center; text-align: center; padding: 20px 18px; margin: 20px 20px 0; gap: 16px; }
+                            #agreement-preview-wrap .ap-acceptance-icon { width: 44px; height: 44px; }
+                            #agreement-preview-wrap .ap-acceptance-icon svg { width: 20px; height: 20px; }
+                            #agreement-preview-wrap .ap-sig-grid { grid-template-columns: 1fr; gap: 8px; }
+                            #agreement-preview-wrap .ap-footer-inner { padding: 24px 20px 0; }
+                            #agreement-preview-wrap .ap-footer-strip { flex-direction: column; gap: 8px; text-align: center; }
+                            #agreement-preview-wrap .ap-footer-bottom { flex-direction: column; gap: 10px; text-align: center; padding: 12px 20px; }
+                            #agreement-preview-wrap .ap-footer-links { flex-wrap: wrap; justify-content: center; gap: 12px; }
+                            #agreement-preview-wrap .ap-footer-social { justify-content: center; }
+                        }
                     </style>
 
                     <style>
@@ -731,7 +724,7 @@
                                 @elseif ($agreement->payment_type->value === 'subscription')
                                     @forelse ($agreement->subscriptions as $sub)
                                         @php
-                                            $subPill = match($sub->status) {
+                                            $subPill = match($sub->status->value) {
                                                 'active' => ['bg' => 'bg-emerald-500/15', 'text' => 'text-emerald-300', 'ring' => 'ring-emerald-500/30'],
                                                 'past_due' => ['bg' => 'bg-amber-500/15', 'text' => 'text-amber-300', 'ring' => 'ring-amber-500/30'],
                                                 'canceled' => ['bg' => 'bg-red-500/15', 'text' => 'text-red-300', 'ring' => 'ring-red-500/30'],
@@ -742,7 +735,7 @@
                                             <td class="py-3 text-sm font-medium text-slate-100">{{ $sub->title ?? 'Subscription' }}</td>
                                             <td class="py-3 text-sm text-slate-200">{{ $sub->formattedAmount() ?? '£' . number_format($sub->amount_pence / 100, 2) }}/{{ $sub->frequency ?? 'mo' }}</td>
                                             <td class="py-3">
-                                                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset {{ $subPill['bg'] }} {{ $subPill['text'] }} {{ $subPill['ring'] }}">{{ ucfirst($sub->status) }}</span>
+                                                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset {{ $subPill['bg'] }} {{ $subPill['text'] }} {{ $subPill['ring'] }}">{{ ucfirst($sub->status->value) }}</span>
                                             </td>
                                             <td class="py-3 text-xs text-slate-400">{{ $sub->created_at->format('M d, Y') }}</td>
                                         </tr>

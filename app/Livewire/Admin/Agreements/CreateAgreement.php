@@ -152,7 +152,9 @@ class CreateAgreement extends Component
 
         $this->dispatch('toast', message: "Agreement {$agreement->agreement_number} created and sent to the client.", type: 'success');
 
-        $this->redirect(route('admin.agreements.show', $agreement), navigate: true);
+        $redirectUrl = route('admin.agreements.show', $agreement);
+
+        $this->redirect($redirectUrl, navigate: true);
     }
 
     public function render()

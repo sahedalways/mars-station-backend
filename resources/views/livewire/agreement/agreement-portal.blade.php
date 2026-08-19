@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6" {{ $paymentPending ? 'wire:poll.3s=checkPaymentStatus' : '' }}>
     @if ($message)
         <x-alert type="success" :message="$message"/>
     @endif
@@ -73,7 +73,7 @@
         @endif
     @endif
 
-    @if ($step === 'view' || $step === 'sign' || $step === 'payment')
+    @if ($step === 'view' || $step === 'sign')
         <style>body { background: #0a0518 !important; }</style>
         <div class="fixed inset-0 overflow-y-auto px-4 sm:px-6" style="background: radial-gradient(ellipse at 20% 60%, rgba(139,92,246,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.1) 0%, transparent 50%), radial-gradient(ellipse at 90% 90%, rgba(168,85,247,0.1) 0%, transparent 50%), linear-gradient(180deg, #0a0518 0%, #130826 50%, #0a0518 100%);">
             <div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6), transparent), radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.4), transparent), radial-gradient(1px 1px at 50% 40%, rgba(255,255,255,0.5), transparent), radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.3), transparent), radial-gradient(1px 1px at 85% 15%, rgba(255,255,255,0.6), transparent), radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.4), transparent), radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.5), transparent), radial-gradient(1px 1px at 40% 55%, rgba(255,255,255,0.3), transparent), radial-gradient(1px 1px at 90% 60%, rgba(255,255,255,0.5), transparent);"></div>
@@ -84,6 +84,41 @@
                 <img src="{{ asset('logo.png') }}" alt="Mars Station" class="mx-auto h-12 w-auto" style="filter: brightness(2) drop-shadow(0 0 8px rgba(168,85,247,0.6));">
                 <div class="mt-3 text-xs font-medium tracking-widest text-slate-300 uppercase">Client Portal</div>
             </div>
+
+            @if ($paymentPending)
+                <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-4 flex items-center gap-3">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15">
+                        <svg class="h-5 w-5 animate-spin text-amber-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-amber-300">
+                            @if ($paymentType === 'subscription')
+                                Payment submitted. We are activating your subscription and confirming the payment...
+                            @elseif ($paymentType === 'milestone')
+                                Payment submitted. We are confirming your milestone payment...
+                            @elseif ($paymentType === 'full')
+                                Payment submitted. We are confirming your full payment...
+                            @else
+                                Payment submitted. We are confirming...
+                            @endif
+                        </p>
+                        <p class="text-xs text-amber-400/70">This page will update automatically once the payment is confirmed.</p>
+                    </div>
+                </div>
+            @endif
+
+            @if ($error && ! $paymentPending)
+                <div class="rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-4 flex items-center gap-3">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15">
+                        <svg class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-red-300">{{ $error }}</p>
+                    </div>
+                    <button type="button" wire:click="$set('error', '')" class="text-xs text-red-400 hover:text-red-300 underline">Dismiss</button>
+                </div>
+            @endif
+
             @if ($agreement->isExpired())
                 <x-alert type="error" message="This agreement has expired and can no longer be signed."/>
             @endif
@@ -207,6 +242,23 @@
                     font-size: 10.5px; color: #4c1d95; font-weight: 600;
                     display: flex; align-items: center; gap: 6px;
                 }
+                @media (max-width: 640px) {
+                    .ap-header { flex-direction: column; padding: 24px 16px 20px; gap: 0; }
+                    .ap-brand { text-align: center; margin-bottom: 20px; }
+                    .ap-brand img { max-width: 160px; }
+                    .ap-meta { min-width: 0; max-width: 100%; width: 100%; grid-template-columns: 1fr; gap: 10px; padding-top: 18px; border-top: 1px solid #e9e5f5; }
+                    .ap-acceptance { flex-direction: column; align-items: center; padding: 20px 16px; margin: 20px 12px 0; gap: 14px; }
+                    .ap-acceptance-icon { width: 44px; height: 44px; border-radius: 10px; }
+                    .ap-acceptance-icon svg { width: 20px; height: 20px; }
+                    .ap-acceptance h4 { font-size: 13px; text-align: center; margin-bottom: 10px; }
+                    .ap-sig-grid { grid-template-columns: 1fr; gap: 10px; width: 100%; }
+                    .ap-sig-note { font-size: 10px; flex-wrap: wrap; }
+                    .ap-footer-inner { padding: 24px 16px 0; }
+                    .ap-footer-strip { gap: 12px; font-size: 9.5px; }
+                    .ap-footer-bottom { flex-direction: column; gap: 10px; padding: 14px 16px; text-align: center; }
+                    .ap-footer-links { justify-content: center; flex-wrap: wrap; gap: 12px; }
+                    .ap-footer-social { justify-content: center; }
+                }
                 .ap-footer {
                     background: linear-gradient(180deg, #1e1b4b 0%, #0f0524 100%); color: #fff; padding: 0; margin-top: 32px;
                     position: relative; overflow: hidden;
@@ -222,8 +274,8 @@
                 }
                 .ap-footer > * { position: relative; z-index: 1; }
                 .ap-footer-inner { padding: 32px 40px 0; }
-                .ap-footer-logo { text-align: center; margin-bottom: 20px; }
-                .ap-footer-logo img { height: 42px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; }
+                .ap-footer-logo { text-align: center; margin-bottom: 20px; width: 100%; }
+                .ap-footer-logo img { display: block; margin: 0 auto; height: 42px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; }
                 .ap-footer-divider {
                     height: 1px; margin: 0 0 18px;
                     background: linear-gradient(90deg, transparent, rgba(167,139,250,0.25), transparent);
@@ -451,6 +503,12 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
                             This agreement is valid from {{ $agreement->created_at->format('M d, Y') }}@if ($version->validity_date) to {{ $version->validity_date->format('M d, Y') }}@endif.
                         </div>
+                        @if ($version->isSigned())
+                            <div class="ap-sig-note" style="border-top: none; margin-top: 4px; padding-top: 0;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                                Electronically accepted and signed by the client.
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -493,86 +551,163 @@
                 </div>
             </div>
 
-            <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-5">
-                <x-button type="button" variant="secondary" wire:click="downloadPdf">Download PDF</x-button>
+            <div class="w-full flex flex-col items-center gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <x-button type="button" variant="secondary" wire:click="downloadPdf" wire:loading.attr="disabled" wire:target="downloadPdf">Download PDF</x-button>
 
                 @if ($step === 'view')
                     @if ($version->isSigned())
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3 sm:ml-auto">
                             <x-badge color="green">Signed {{ $version->signed_at->format('d M Y') }}</x-badge>
                             @if ($agreement->payment_type->value === 'none' || $agreement->isPaid())
-                                <x-button wire:click="complete">View Status</x-button>
+                                <x-button wire:click="complete" wire:loading.attr="disabled" wire:target="complete">View Status</x-button>
                             @else
-                                <x-button wire:click="goToPayment">Continue</x-button>
+                                <x-button wire:click="goToPayment" wire:loading.attr="disabled" wire:target="goToPayment" :disabled="$paymentPending">Continue</x-button>
                             @endif
                         </div>
                     @elseif (!$agreement->isExpired())
-                        <x-button wire:click="goToSign">Sign Agreement</x-button>
+                        <x-button wire:click="goToSign" wire:loading.attr="disabled" wire:target="goToSign">Sign Agreement</x-button>
                     @endif
-                @endif
-
-                @if ($step === 'payment')
-                    <div class="w-full space-y-4 rounded-2xl border border-purple-500/20 bg-slate-900 p-6 shadow-xl shadow-purple-950/40 ring-1 ring-slate-700/50">
-                        <div class="flex items-center gap-3">
-                            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10">
-                                <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
-                            </div>
-                            <div>
-                                <h2 class="text-base font-semibold text-white">Payment</h2>
-                                <p class="text-xs text-slate-400">Complete payment to proceed</p>
-                            </div>
-                        </div>
-
-                        @if ($error)
-                            <div class="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">{{ $error }}</div>
-                        @endif
-
-                        @if ($agreement->payment_type->value === 'none')
-                            <p class="text-sm text-slate-300">No payment is required.</p>
-                            <div class="flex justify-end">
-                                <x-button variant="success" wire:click="complete">Finish</x-button>
-                            </div>
-                        @elseif ($agreement->isPaid())
-                            <div class="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-400">This agreement has been fully paid.</div>
-                            <div class="flex justify-end">
-                                <x-button variant="success" wire:click="complete">Finish</x-button>
-                            </div>
-                        @elseif ($agreement->payment_type->value === 'milestone')
-                            @php $milestone = $agreement->nextMilestone(); @endphp
-                            <div class="rounded-xl border border-slate-700/50 bg-slate-800/50 p-4">
-                                <p class="text-xs text-slate-400">Milestone</p>
-                                <p class="mt-1 text-sm font-medium text-white">{{ $milestone?->title }}</p>
-                                <p class="mt-2 text-2xl font-bold text-purple-300">{{ $milestone?->formattedAmount() }}</p>
-                            </div>
-                            <div class="flex items-center justify-end gap-3 pt-1">
-                                <button type="button" wire:click="goToSign" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-inset ring-slate-600 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60">Back</button>
-                                <button type="button" wire:click="payNow" wire:loading.attr="disabled" wire:target="payNow" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-8 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
-                                    <span wire:loading.remove wire:target="payNow">Pay Now</span>
-                                    <span wire:loading wire:target="payNow" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
-                                </button>
-                            </div>
-                        @else
-                            <div class="rounded-xl border border-slate-700/50 bg-slate-800/50 p-4">
-                                <p class="text-xs text-slate-400">Total Amount</p>
-                                <p class="mt-2 text-2xl font-bold text-purple-300">{{ $agreement->formatted_amount }}</p>
-                                <p class="mt-1 text-xs text-slate-500">Pay via secure checkout to activate your agreement.</p>
-                            </div>
-                            <div class="flex items-center justify-end gap-3 pt-1">
-                                <button type="button" wire:click="goToSign" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-inset ring-slate-600 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60">Back</button>
-                                <button type="button" wire:click="payNow" wire:loading.attr="disabled" wire:target="payNow" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-8 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
-                                    <span wire:loading.remove wire:target="payNow">Pay Now</span>
-                                    <span wire:loading wire:target="payNow" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
-                                </button>
-                            </div>
-                        @endif
-                    </div>
                 @endif
             </div>
 
-            <p class="mt-6 text-center text-xs text-slate-500 mb-5">
+            <p class="text-center text-xs text-slate-500 mb-5" style="margin-top: 40px;">
                 &copy; {{ date('Y') }} {{ config('app.name') }}. This is a secure document portal.
             </p>
         </div>
+        </div>
+    @endif
+
+    @if ($showPaymentModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);">
+            <div class="w-full max-w-md overflow-hidden rounded-2xl border border-purple-500/20 bg-slate-900 shadow-2xl shadow-purple-950/40 ring-1 ring-slate-700/50">
+                <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10">
+                            <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-semibold text-white">Payment</h2>
+                            <p class="text-xs text-slate-400">Complete payment to proceed</p>
+                        </div>
+                    </div>
+                    <button type="button" wire:click="closePaymentModal" class="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-200 cursor-pointer" aria-label="Close">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="px-6 py-5 space-y-4">
+                    @if ($error)
+                        <div class="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">{{ $error }}</div>
+                    @endif
+
+                    @if ($agreement->payment_type->value === 'none')
+                        <p class="text-sm text-slate-300">No payment is required.</p>
+                        <div class="flex justify-end">
+                            <x-button variant="success" wire:click="complete" wire:loading.attr="disabled" wire:target="complete">Finish</x-button>
+                        </div>
+                    @elseif ($agreement->isPaid())
+                        <div class="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-400">This agreement has been fully paid.</div>
+                        <div class="flex justify-end">
+                            <x-button variant="success" wire:click="complete" wire:loading.attr="disabled" wire:target="complete">Finish</x-button>
+                        </div>
+                    @elseif ($agreement->payment_type->value === 'milestone')
+                        @php
+                            $milestone = $agreement->nextMilestone();
+                            $allMilestones = $agreement->milestones()->orderBy('order_index')->get();
+                            $totalMilestones = $allMilestones->count();
+                            $paidCount = $allMilestones->where('status', 'paid')->count();
+                            $nextIndex = $milestone ? $allMilestones->search(fn($m) => $m->id === $milestone->id) + 1 : $totalMilestones + 1;
+                        @endphp
+                        <div class="rounded-xl border border-slate-700/50 bg-slate-800/50 p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-xs text-slate-400">Milestone {{ $nextIndex }} of {{ $totalMilestones }}</p>
+                                <p class="text-xs text-slate-500">{{ $paidCount }} of {{ $totalMilestones }} paid</p>
+                            </div>
+                            <div class="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-700">
+                                <div class="h-full rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all" style="width: {{ $totalMilestones > 0 ? ($paidCount / $totalMilestones) * 100 : 0 }}%"></div>
+                            </div>
+                            <p class="text-sm font-medium text-white">{{ $milestone?->title }}</p>
+                            @if ($milestone?->description)
+                                <p class="mt-1 text-xs text-slate-400">{{ $milestone->description }}</p>
+                            @endif
+                            <p class="mt-2 text-2xl font-bold text-purple-300">{{ $milestone?->formattedAmount() }}</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            @foreach ($allMilestones as $ms)
+                                <div class="flex items-center gap-3 rounded-lg px-3 py-2 {{ $ms->status === 'paid' ? 'bg-emerald-500/5' : ($milestone && $ms->id === $milestone->id ? 'bg-indigo-500/10 ring-1 ring-indigo-500/20' : 'bg-slate-800/30') }}">
+                                    @if ($ms->status === 'paid')
+                                        <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
+                                            <svg class="h-3 w-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                                        </div>
+                                    @elseif ($milestone && $ms->id === $milestone->id)
+                                        <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-500/20">
+                                            <div class="h-2 w-2 rounded-full bg-indigo-400"></div>
+                                        </div>
+                                    @else
+                                        <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-700/50">
+                                            <div class="h-2 w-2 rounded-full bg-slate-600"></div>
+                                        </div>
+                                    @endif
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-xs font-medium {{ $ms->status === 'paid' ? 'text-emerald-300' : ($milestone && $ms->id === $milestone->id ? 'text-white' : 'text-slate-400') }}">{{ $ms->title }}</p>
+                                    </div>
+                                    <span class="shrink-0 text-xs font-semibold {{ $ms->status === 'paid' ? 'text-emerald-400' : ($milestone && $ms->id === $milestone->id ? 'text-purple-300' : 'text-slate-500') }}">
+                                        {{ $ms->formattedAmount() }}
+                                    </span>
+                                    @if ($ms->status === 'paid')
+                                        <span class="shrink-0 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">PAID</span>
+                                    @elseif ($milestone && $ms->id === $milestone->id)
+                                        <span class="shrink-0 rounded bg-indigo-500/15 px-1.5 py-0.5 text-[9px] font-bold text-indigo-300">DUE</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="flex items-center justify-end gap-3 pt-1">
+                            <button type="button" wire:click="closePaymentModal" wire:loading.attr="disabled" wire:target="closePaymentModal" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-inset ring-slate-600 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span wire:loading.remove wire:target="closePaymentModal">Cancel</span>
+                                <span wire:loading wire:target="closePaymentModal" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg></span>
+                            </button>
+                            <button type="button" wire:click="payNow" wire:loading.attr="disabled" wire:target="payNow" {{ $paymentPending ? 'disabled' : '' }} class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-16 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span wire:loading.remove wire:target="payNow">Pay Now</span>
+                                <span wire:loading wire:target="payNow" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
+                            </button>
+                        </div>
+                    @elseif ($payType === 'subscription')
+                        <div class="rounded-xl border border-slate-700/50 bg-slate-800/50 p-4">
+                            <p class="text-xs text-slate-400">Subscription</p>
+                            <p class="mt-2 text-2xl font-bold text-purple-300">{{ \App\Support\Money::format($payConfig['amount_pence']) }}<span class="text-base font-normal text-slate-400"> / {{ ucfirst($payConfig['frequency'] ?? 'monthly') }}</span></p>
+                            <p class="mt-1 text-xs text-slate-500">Subscribe via secure checkout to activate your agreement.</p>
+                        </div>
+                        <div class="flex items-center justify-end gap-3 pt-1">
+                            <button type="button" wire:click="closePaymentModal" wire:loading.attr="disabled" wire:target="closePaymentModal" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-inset ring-slate-600 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span wire:loading.remove wire:target="closePaymentModal">Cancel</span>
+                                <span wire:loading wire:target="closePaymentModal" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg></span>
+                            </button>
+                            <button type="button" wire:click="payNow" wire:loading.attr="disabled" wire:target="payNow" {{ $paymentPending ? 'disabled' : '' }} class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-16 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span wire:loading.remove wire:target="payNow">Subscribe</span>
+                                <span wire:loading wire:target="payNow" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
+                            </button>
+                        </div>
+                    @else
+                        <div class="rounded-xl border border-slate-700/50 bg-slate-800/50 p-4">
+                            <p class="text-xs text-slate-400">Total Amount</p>
+                            <p class="mt-2 text-2xl font-bold text-purple-300">{{ $agreement->formatted_amount }}</p>
+                            <p class="mt-1 text-xs text-slate-500">Pay via secure checkout to activate your agreement.</p>
+                        </div>
+                        <div class="flex items-center justify-end gap-3 pt-1">
+                            <button type="button" wire:click="closePaymentModal" wire:loading.attr="disabled" wire:target="closePaymentModal" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-inset ring-slate-600 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span wire:loading.remove wire:target="closePaymentModal">Cancel</span>
+                                <span wire:loading wire:target="closePaymentModal" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg></span>
+                            </button>
+                            <button type="button" wire:click="payNow" wire:loading.attr="disabled" wire:target="payNow" {{ $paymentPending ? 'disabled' : '' }} class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-16 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span wire:loading.remove wire:target="payNow">Pay Now</span>
+                                <span wire:loading wire:target="payNow" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
+                            </button>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     @endif
 
@@ -594,13 +729,13 @@
                     </div>
                     <h1 class="text-xl font-bold text-white">Thank you</h1>
                     <p class="text-sm text-slate-400">
-                        Your agreement with Mars Station is now complete. You can download a copy of the signed agreement below.
+                        {{ $completionMessage ?: 'Your agreement with Mars Station is now complete. You can download a copy of the signed agreement below.' }}
                     </p>
                     <div class="flex items-center justify-center gap-3">
-                        <x-button variant="secondary" wire:click="downloadPdf">Download Signed PDF</x-button>
+                        <x-button variant="secondary" wire:click="downloadPdf" wire:loading.attr="disabled" wire:target="downloadPdf">Download Signed PDF</x-button>
                     </div>
                 </div>
-                <p class="mt-12 text-center text-xs text-slate-500 mb-5">
+                <p class="mt-12 text-center text-xs text-slate-500 mb-5 mt-5">
                     &copy; {{ date('Y') }} {{ config('app.name') }}. This is a secure document portal.
                 </p>
             </div>
@@ -615,12 +750,12 @@
                     <div class="relative w-full max-w-xl overflow-hidden rounded-2xl border border-purple-500/20 bg-slate-900 shadow-xl shadow-purple-950/40 ring-1 ring-slate-700/50">
                         <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10">
+                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-500/10">
                                     <svg class="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>
                                 </div>
                                 <h3 class="text-base font-semibold text-slate-100">Sign this agreement</h3>
                             </div>
-                            <button type="button" wire:click="goToView" class="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-200 cursor-pointer" aria-label="Close">
+                            <button type="button" wire:click="goToView" wire:loading.attr="disabled" wire:target="goToView" class="shrink-0 rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-200 cursor-pointer disabled:opacity-50" aria-label="Close">
                                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
@@ -639,13 +774,18 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center justify-end gap-3 border-t border-slate-800 bg-slate-950/60 px-6 py-4">
-                            <p class="mr-auto text-xs text-slate-500">By signing, you agree to the terms. Your signature will be recorded with your IP and timestamp.</p>
-                            <button type="button" wire:click="goToView" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-inset ring-slate-600 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60">Cancel</button>
-                            <button type="button" wire:click="sign" wire:loading.attr="disabled" wire:target="sign" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-8 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
-                                <span wire:loading.remove wire:target="sign">Sign &amp; Continue</span>
-                                <span wire:loading wire:target="sign" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
-                            </button>
+                        <div class="flex flex-col gap-3 border-t border-slate-800 bg-slate-950/60 px-6 py-4 sm:flex-row sm:items-center sm:justify-end">
+                            <p class="text-xs text-slate-500 sm:mr-auto text-center sm:text-left">By signing, you agree to the terms. Your signature will be recorded with your IP and timestamp.</p>
+                            <div class="flex items-center justify-center gap-3">
+                                <button type="button" wire:click="goToView" wire:loading.attr="disabled" wire:target="goToView" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-inset ring-slate-600 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
+                                    <span wire:loading.remove wire:target="goToView">Cancel</span>
+                                    <span wire:loading wire:target="goToView" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
+                                </button>
+                                <button type="button" wire:click="sign" wire:loading.attr="disabled" wire:target="sign" class="inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-indigo-600 px-8 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
+                                    <span wire:loading.remove wire:target="sign">Sign &amp; Continue</span>
+                                    <span wire:loading wire:target="sign" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

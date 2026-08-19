@@ -46,6 +46,9 @@ class ServiceIndex extends Component
 
     public bool $isActive = true;
 
+    /** Paths loaded from DB when editing — used to detect orphaned uploads on cancel. */
+    private array $committedPaths = [];
+
     public function openCreateModal(): void
     {
         $this->title = '';
@@ -54,6 +57,7 @@ class ServiceIndex extends Component
         $this->bulletPoints = [];
         $this->newBulletPoint = '';
         $this->projects = [];
+        $this->committedPaths = [];
         $this->newProjectImage = null;
         $this->editServiceId = null;
         $this->isActive = true;
@@ -76,12 +80,13 @@ class ServiceIndex extends Component
         $this->isActive = $service->is_active;
         $this->bulletPoints = $service->bulletPoints->pluck('text')->values()->all();
         $this->projects = $service->projects
-            ->map(fn($p) => [
+            ->map(fn ($p) => [
                 'title' => $p->title,
                 'picture_path' => $p->picture_path,
             ])
             ->values()
             ->all();
+        $this->committedPaths = $service->projects->pluck('picture_path')->filter()->values()->all();
         $this->showCreateModal = true;
     }
 
@@ -115,6 +120,11 @@ class ServiceIndex extends Component
 
             $path = $file->store('services/projects', 'public');
 
+            if (empty($path)) {
+                $this->dispatch('toast', message: 'Failed to store: ' . $file->getClientOriginalName(), type: 'error');
+                continue;
+            }
+
             $this->projects[] = [
                 'title' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
                 'picture_path' => $path,
@@ -126,12 +136,20 @@ class ServiceIndex extends Component
 
     public function removeProject(int $index): void
     {
-        if (isset($this->projects[$index]['picture_path']) && ! str_starts_with($this->projects[$index]['picture_path'], 'http')) {
-            Storage::disk('public')->delete($this->projects[$index]['picture_path']);
+        if (! isset($this->projects[$index])) {
+            return;
         }
+
+        $path = $this->projects[$index]['picture_path'] ?? null;
 
         unset($this->projects[$index]);
         $this->projects = array_values($this->projects);
+
+        // Only delete file from disk if it was a new upload (not in DB).
+        // For existing DB records, save() handles deletion after successful DB write.
+        if ($path && ! in_array($path, $this->committedPaths, true)) {
+            Storage::disk('public')->delete($path);
+        }
     }
 
     public function confirmDelete(int $id): void
@@ -151,6 +169,8 @@ class ServiceIndex extends Component
             }
         }
 
+        $service->projects()->delete();
+        $service->bulletPoints()->delete();
         $service->delete();
 
         $logs->record('service.deleted', $service, [
@@ -170,102 +190,137 @@ class ServiceIndex extends Component
             'description' => ['required', 'string'],
         ]);
 
-        $message = 'Service created.';
-
-        DB::transaction(function () use ($logs, &$message) {
-            if ($this->editServiceId) {
-                $service = Service::findOrFail($this->editServiceId);
-
-                $service->update([
-                    'title' => $this->title,
-                    'type' => $this->type,
-                    'description' => $this->description,
-                    'is_active' => $this->isActive,
-                ]);
-
-                $service->bulletPoints()->delete();
-                foreach ($this->bulletPoints as $i => $text) {
-                    ServiceBulletPoint::create([
-                        'service_id' => $service->id,
-                        'text' => $text,
-                        'order_index' => $i + 1,
-                    ]);
-                }
-
-                $existingPaths = $service->projects->pluck('picture_path')->filter()->all();
-                $service->projects()->delete();
-                foreach ($existingPaths as $path) {
-                    if (! in_array($path, array_column($this->projects, 'picture_path'))) {
-                        Storage::disk('public')->delete($path);
-                    }
-                }
-
-                foreach ($this->projects as $i => $project) {
-                    ServiceProject::create([
-                        'service_id' => $service->id,
-                        'title' => $project['title'],
-                        'picture_path' => $project['picture_path'] ?? null,
-                        'order_index' => $i + 1,
-                    ]);
-                }
-
-                $logs->record('service.updated', $service, [
-                    'title' => $service->title,
-                ], auth('admin')->user());
-
-                $message = 'Service updated.';
-            } else {
-                $count = Service::count();
-
-                abort_if($count >= (int) config('mars.services.max', 12), 422, 'Maximum number of services reached.');
-
-                $service = Service::create([
-                    'title' => $this->title,
-                    'type' => $this->type,
-                    'description' => $this->description,
-                    'order_index' => $count + 1,
-                    'is_active' => $this->isActive,
-                ]);
-
-                foreach ($this->bulletPoints as $i => $text) {
-                    ServiceBulletPoint::create([
-                        'service_id' => $service->id,
-                        'text' => $text,
-                        'order_index' => $i + 1,
-                    ]);
-                }
-
-                foreach ($this->projects as $i => $project) {
-                    ServiceProject::create([
-                        'service_id' => $service->id,
-                        'title' => $project['title'],
-                        'picture_path' => $project['picture_path'] ?? null,
-                        'order_index' => $i + 1,
-                    ]);
-                }
-
-                $logs->record('service.created', $service, [
-                    'title' => $service->title,
-                ], auth('admin')->user());
-
-                $message = 'Service created.';
+        // Ensure every project entry has a picture_path set by processUploadedImages.
+        foreach ($this->projects as $i => $project) {
+            if (empty($project['picture_path'])) {
+                $this->dispatch('toast', message: 'Each project image must have a valid file.', type: 'error');
+                return;
             }
-        });
+        }
+
+        $message = 'Service created.';
+        $filesStoredDuringSave = [];
+
+        try {
+            DB::transaction(function () use ($logs, &$message, &$filesStoredDuringSave) {
+                if ($this->editServiceId) {
+                    $service = Service::findOrFail($this->editServiceId);
+
+                    $service->update([
+                        'title' => $this->title,
+                        'type' => $this->type,
+                        'description' => $this->description,
+                        'is_active' => $this->isActive,
+                    ]);
+
+                    $service->bulletPoints()->delete();
+                    foreach ($this->bulletPoints as $i => $text) {
+                        ServiceBulletPoint::create([
+                            'service_id' => $service->id,
+                            'text' => $text,
+                            'order_index' => $i + 1,
+                        ]);
+                    }
+
+                    // Collect old paths before deleting DB records.
+                    $existingPaths = $service->projects->pluck('picture_path')->filter()->all();
+                    $service->projects()->delete();
+
+                    // Delete files that are no longer referenced.
+                    $newPaths = array_column($this->projects, 'picture_path');
+                    foreach ($existingPaths as $path) {
+                        if (! in_array($path, $newPaths, true)) {
+                            Storage::disk('public')->delete($path);
+                        }
+                    }
+
+                    foreach ($this->projects as $i => $project) {
+                        ServiceProject::create([
+                            'service_id' => $service->id,
+                            'title' => $project['title'],
+                            'picture_path' => $project['picture_path'],
+                            'order_index' => $i + 1,
+                        ]);
+                    }
+
+                    $logs->record('service.updated', $service, [
+                        'title' => $service->title,
+                    ], auth('admin')->user());
+
+                    $message = 'Service updated.';
+                } else {
+                    $count = Service::count();
+
+                    abort_if($count >= (int) config('mars.services.max', 12), 422, 'Maximum number of services reached.');
+
+                    $service = Service::create([
+                        'title' => $this->title,
+                        'type' => $this->type,
+                        'description' => $this->description,
+                        'order_index' => $count + 1,
+                        'is_active' => $this->isActive,
+                    ]);
+
+                    foreach ($this->bulletPoints as $i => $text) {
+                        ServiceBulletPoint::create([
+                            'service_id' => $service->id,
+                            'text' => $text,
+                            'order_index' => $i + 1,
+                        ]);
+                    }
+
+                    foreach ($this->projects as $i => $project) {
+                        ServiceProject::create([
+                            'service_id' => $service->id,
+                            'title' => $project['title'],
+                            'picture_path' => $project['picture_path'],
+                            'order_index' => $i + 1,
+                        ]);
+                    }
+
+                    $logs->record('service.created', $service, [
+                        'title' => $service->title,
+                    ], auth('admin')->user());
+
+                    $message = 'Service created.';
+                }
+            });
+        } catch (\Exception $e) {
+            // If DB transaction failed, clean up any files stored during this attempt.
+            foreach ($filesStoredDuringSave as $path) {
+                Storage::disk('public')->delete($path);
+            }
+
+            $this->dispatch('toast', message: 'Save failed: ' . $e->getMessage(), type: 'error');
+            return;
+        }
 
         $this->showCreateModal = false;
         $this->editServiceId = null;
+        $this->committedPaths = [];
         $this->dispatch('toast', message: $message, type: 'success');
     }
 
     public function closeModal(string $property): void
     {
-        $this->$property = false;
+        if ($property === 'showCreateModal') {
+            // Clean up files stored to disk but not yet committed to DB.
+            $currentPaths = array_column($this->projects, 'picture_path');
+            foreach ($currentPaths as $path) {
+                if (! empty($path) && ! in_array($path, $this->committedPaths, true)) {
+                    Storage::disk('public')->delete($path);
+                }
+            }
+            $this->projects = [];
+            $this->editServiceId = null;
+            $this->committedPaths = [];
+        }
+
         if ($property === 'showDeleteModal') {
             $this->deleteServiceId = null;
         }
-        if ($property === 'showCreateModal') {
-            $this->editServiceId = null;
-        }
+
+        $this->$property = false;
     }
 
     public function move(int $id, int $direction, ActivityLogService $logs): void
@@ -274,7 +329,7 @@ class ServiceIndex extends Component
 
         $siblings = Service::query()->orderBy('order_index')->get();
         $keys = $siblings->keys()->all();
-        $current = $siblings->search(fn($s) => $s->id === $service->id);
+        $current = $siblings->search(fn ($s) => $s->id === $service->id);
         $target = $current + $direction;
 
         if (! in_array($target, $keys)) {

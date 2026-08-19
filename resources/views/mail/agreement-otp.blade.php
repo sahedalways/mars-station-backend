@@ -1,7 +1,20 @@
 <x-mail.layout>
     <x-slot:title>Your verification code</x-slot:title>
 
-    {{-- Lock Icon Header --}}
+    {{-- Lock Icon --}}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+            <td align="center" style="padding-bottom: 20px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="width:64px; height:64px; background:#f3e8ff; border-radius:50%; text-align:center; vertical-align:middle;">
+                            <span style="color:#7c3aed; font-size:28px; line-height:64px;">&#128274;</span>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 
 
     {{-- Title Section --}}

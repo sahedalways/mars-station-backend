@@ -11,7 +11,7 @@ class SyncSubscriptionsCommand extends Command
 {
     protected $signature = 'subscriptions:sync';
 
-    protected $description = 'Reconcile subscription statuses with Stripe';
+    protected $description = 'Reconcile subscription statuses';
 
     public function handle(StripeService $stripe, SubscriptionService $subscriptions): int
     {

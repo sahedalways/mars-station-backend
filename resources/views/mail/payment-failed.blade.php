@@ -87,7 +87,7 @@
                 <td style="padding: 8px 0; vertical-align: top;">
                     <p style="margin: 0; color: #6b7280; font-size: 12px;">Amount Due</p>
                     <p style="margin: 2px 0 0; color: #111827; font-size: 13px; font-weight: 600;">
-                        {{ $agreement->currency_symbol ?? '£' }}{{ number_format($payment->amount ?? 0, 2) }}
+                        {{ $payment->formattedAmount() }}
                     </p>
                 </td>
                 <td style="padding: 8px 0; vertical-align: top;">

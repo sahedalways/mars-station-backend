@@ -102,7 +102,7 @@
         </nav>
     </header>
 
-    <main class="mx-auto w-full px-4 pb-16 pt-24 sm:px-6">
+    <main class="mx-auto w-full px-4 pb-16 pt-32 sm:px-6 sm:pt-24">
         <div x-data="{}">
             {{ $slot }}
         </div>

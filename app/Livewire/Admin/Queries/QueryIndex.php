@@ -46,6 +46,13 @@ class QueryIndex extends Component
         $this->resetPage();
     }
 
+    public function clearFilters(): void
+    {
+        $this->search = '';
+        $this->status = null;
+        $this->resetPage();
+    }
+
     public function openQuery(Query $query): void
     {
         $query->markRead();

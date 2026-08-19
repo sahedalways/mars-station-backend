@@ -1,12 +1,6 @@
-The design matches your image, with an email HTML table layout for full responsiveness and email client compatibility (Outlook, Gmail, Apple Mail, etc.).
-
-Replace your Blade code with this:
-
-```html
 <x-mail.layout>
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 10px 0;">
 
-        <!-- Header / Bell Icon -->
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px; text-align: center;">
             <tr>
                 <td align="center">
@@ -27,7 +21,6 @@ Replace your Blade code with this:
             </tr>
         </table>
 
-        <!-- Greeting & Content -->
         <div style="margin-bottom: 24px; font-size: 14px; line-height: 22px; color: #334155;">
             <p style="margin: 0 0 12px; font-weight: 700; color: #0f172a;">
                 Hello {{ $agreement->client_name }},
@@ -40,7 +33,6 @@ Replace your Blade code with this:
             </p>
         </div>
 
-        <!-- Agreement Summary Box -->
         <div style="background-color: #f8f8fd; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #f1f0fb;">
             <h3 style="margin: 0 0 16px; color: #6d28d9; font-size: 14px; font-weight: 700;">
                 Agreement Summary
@@ -48,7 +40,6 @@ Replace your Blade code with this:
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13px;">
                 <tr>
-                    <!-- Col 1 -->
                     <td width="33%" valign="top" style="padding-right: 12px; padding-bottom: 16px; border-right: 1px solid #eef0f6;">
                         <table cellpadding="0" cellspacing="0" border="0">
                             <tr>
@@ -62,7 +53,6 @@ Replace your Blade code with this:
                             </tr>
                         </table>
                     </td>
-                    <!-- Col 2 -->
                     <td width="33%" valign="top" style="padding-left: 12px; padding-right: 12px; padding-bottom: 16px; border-right: 1px solid #eef0f6;">
                         <table cellpadding="0" cellspacing="0" border="0">
                             <tr>
@@ -76,7 +66,6 @@ Replace your Blade code with this:
                             </tr>
                         </table>
                     </td>
-                    <!-- Col 3 -->
                     <td width="34%" valign="top" style="padding-left: 12px; padding-bottom: 16px;">
                         <table cellpadding="0" cellspacing="0" border="0">
                             <tr>
@@ -95,7 +84,6 @@ Replace your Blade code with this:
                     <td colspan="3" style="padding-top: 12px; border-top: 1px solid #eef0f6;"></td>
                 </tr>
                 <tr>
-                    <!-- Col 1 Row 2 -->
                     <td valign="top" style="padding-right: 12px; border-right: 1px solid #eef0f6;">
                         <table cellpadding="0" cellspacing="0" border="0">
                             <tr>
@@ -109,7 +97,6 @@ Replace your Blade code with this:
                             </tr>
                         </table>
                     </td>
-                    <!-- Col 2 Row 2 -->
                     <td valign="top" style="padding-left: 12px; padding-right: 12px; border-right: 1px solid #eef0f6;">
                         <table cellpadding="0" cellspacing="0" border="0">
                             <tr>
@@ -123,7 +110,6 @@ Replace your Blade code with this:
                             </tr>
                         </table>
                     </td>
-                    <!-- Col 3 Row 2 -->
                     <td valign="top" style="padding-left: 12px;">
                         <table cellpadding="0" cellspacing="0" border="0">
                             <tr>
@@ -143,18 +129,16 @@ Replace your Blade code with this:
             </table>
         </div>
 
-        <!-- Button Section -->
         <div style="text-align: center; margin-bottom: 24px;">
             <a href="{{ $link->publicUrl() }}" style="display: inline-block; background-color: #09051d; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 50px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(9, 5, 29, 0.15);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" style="vertical-align: sub; margin-right: 6px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                Review & Sign Agreement
+                Review &amp; Sign Agreement
             </a>
             <p style="margin: 10px 0 0; font-size: 12px; color: #64748b;">
                 Click the button above to review the agreement and take the next step.
             </p>
         </div>
 
-        <!-- Copy Link Box -->
         <div style="background-color: #fafafd; border: 1px solid #eef0f6; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;">
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
@@ -173,7 +157,6 @@ Replace your Blade code with this:
             </table>
         </div>
 
-        <!-- Support / Help Box -->
         <div style="background-color: #fafafd; border: 1px solid #eef0f6; border-radius: 10px; padding: 16px; margin-bottom: 24px;">
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
@@ -206,7 +189,6 @@ Replace your Blade code with this:
             </table>
         </div>
 
-        <!-- Footer Note -->
         <div style="text-align: center; font-size: 12px; color: #64748b; line-height: 18px;">
             Thank you for choosing Mars Station.<br>
             We appreciate your time and trust.
@@ -214,4 +196,3 @@ Replace your Blade code with this:
 
     </div>
 </x-mail.layout>
-```

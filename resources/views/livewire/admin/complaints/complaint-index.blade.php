@@ -83,7 +83,7 @@
 
                     {{-- Filter button --}}
                     @if ($search !== '' || $status !== null)
-                        <button type="button" wire:click="$set('search', ''); $set('status', null)"
+                        <button type="button" wire:click="clearFilters"
                                 class="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-slate-900/60 px-3.5 py-2.5 text-sm font-medium text-red-300 transition hover:border-red-500/40 hover:text-red-200">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>

@@ -44,24 +44,6 @@
                     <tr>
                         <td class="content-padding" style="background:#ffffff; padding:40px 40px 32px; border-radius:0;">
 
-                            {{-- Icon circle — only shows if $icon is explicitly passed --}}
-                            @if (isset($icon) && $icon)
-                                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-                                    <tr>
-                                        <td align="center" style="padding-bottom: 20px;">
-                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                                                <tr>
-                                                    <td style="width:64px; height:64px; background:#f3e8ff; border-radius:50%; text-align:center; vertical-align:middle;">
-                                                        {!! $icon !!}
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </td>
-                                    </tr>
-                                </table>
-                            @endif
-
-                            {{-- Main slot --}}
                             {{ $slot }}
 
                         </td>

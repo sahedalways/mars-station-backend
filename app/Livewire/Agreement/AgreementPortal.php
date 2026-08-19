@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Agreement;
 
+use App\Enums\MilestoneStatus;
 use App\Models\AgreementLink;
 use App\Models\AgreementOtpSession;
 use App\Services\AgreementService;
@@ -36,6 +37,20 @@ class AgreementPortal extends Component
     public string $message = '';
 
     public string $error = '';
+
+    public bool $showPaymentModal = false;
+
+    public bool $paymentPending = false;
+
+    public string $paymentType = '';
+
+    public string $completionMessage = '';
+
+    public int $pendingMilestoneId = 0;
+
+    public int $pendingMilestoneIndex = 0;
+
+    public int $totalMilestoneCount = 0;
 
     public function mount(string $token): void
     {
@@ -72,6 +87,47 @@ class AgreementPortal extends Component
                 $this->step = 'otp';
                 $this->requestOtp();
             }
+        }
+
+        $statusParam = request()->query('status');
+
+        if ($statusParam === 'success') {
+            $agreement->refresh();
+            $this->paymentType = $agreement->payment_type->value;
+
+            if ($agreement->isPaid()) {
+                $this->completionMessage = $this->buildCompletionMessage($agreement);
+                $this->step = 'complete';
+            } else {
+                $this->paymentPending = true;
+                $this->step = 'view';
+
+                if ($this->paymentType === 'milestone') {
+                    $allMs = $agreement->milestones()->orderBy('order_index')->get();
+                    $this->totalMilestoneCount = $allMs->count();
+
+                    // Find the milestone that was just paid (webhook may have already processed).
+                    $justPaid = $agreement->milestones()
+                        ->where('status', MilestoneStatus::Paid)
+                        ->orderByDesc('paid_at')
+                        ->first();
+
+                    // Fall back to the next pending milestone if webhook hasn't arrived yet.
+                    $trackMs = $justPaid ?? $agreement->nextMilestone();
+
+                    if ($trackMs) {
+                        $this->pendingMilestoneId = $trackMs->id;
+                        $this->pendingMilestoneIndex = (int) $allMs->search(fn ($m) => $m->id === $trackMs->id) + 1;
+                    }
+                }
+            }
+        } elseif ($statusParam === 'cancelled') {
+            $this->paymentType = $agreement->payment_type->value;
+            $this->error = match ($this->paymentType) {
+                'subscription' => 'Subscription payment was cancelled. Your subscription has not been activated. You can try again when ready.',
+                'milestone' => 'Milestone payment was cancelled. This milestone is still unpaid. You can try again when ready.',
+                default => 'Full payment was cancelled. No payment was completed. You can try again when ready.',
+            };
         }
     }
 
@@ -171,13 +227,27 @@ class AgreementPortal extends Component
         $agreement = $this->link->agreement;
         $version = $this->link->version;
 
-        abort_if($agreement->is_archived, 410, 'This agreement has been archived.');
-        abort_if($version->isSigned(), 409, 'This version has already been signed.');
+        if ($agreement->is_archived) {
+            $this->error = 'This agreement has been archived.';
+
+            return;
+        }
+
+        if ($version->isSigned()) {
+            $this->error = 'This version has already been signed.';
+
+            return;
+        }
 
         if ($this->link->otp_enabled) {
             $signSessionId = session("agreement_otp_{$this->link->id}");
             $signSession = is_int($signSessionId) ? AgreementOtpSession::find($signSessionId) : null;
-            abort_unless($signSession && $signSession->grantsAccess(), 403, 'Agreement access expired. Please reload the page.');
+
+            if (! $signSession || ! $signSession->grantsAccess()) {
+                $this->error = 'Agreement access expired. Please reload the page.';
+
+                return;
+            }
         }
 
         $pdfService = app(PdfService::class);
@@ -204,8 +274,11 @@ class AgreementPortal extends Component
             'signed_email' => $this->signEmail,
         ]);
 
-        $this->step = 'payment';
+        $this->step = 'view';
+        $this->showPaymentModal = true;
         $this->message = 'Thank you for signing. Your agreement is now valid.';
+
+        $this->dispatch('toast', message: 'Agreement signed successfully!', type: 'success');
     }
 
     public function payNow(StripeService $stripe): mixed
@@ -223,14 +296,27 @@ class AgreementPortal extends Component
             return null;
         }
 
-        $checkout = match ($agreement->payment_type->value) {
-            'full' => $this->createFullCheckout($stripe, $agreement, $version),
-            'milestone' => $this->createMilestoneCheckout($stripe, $agreement, $version),
-            'subscription' => $this->createSubscriptionCheckout($stripe, $agreement, $version),
-            default => null,
-        };
+        try {
+            $checkout = match ($agreement->payment_type->value) {
+                'full' => $this->createFullCheckout($stripe, $agreement, $version),
+                'milestone' => $this->createMilestoneCheckout($stripe, $agreement, $version),
+                'subscription' => $this->createSubscriptionCheckout($stripe, $agreement, $version),
+                default => null,
+            };
+        } catch (\Throwable $e) {
+            report($e);
+            $this->error = 'Payment session could not be created. Please try again.';
 
-        return $checkout ? redirect()->away($checkout->url) : $this->complete();
+            return null;
+        }
+
+        if (! $checkout) {
+            $this->error = 'Payment session could not be created. Please try again.';
+
+            return null;
+        }
+
+        return redirect()->away($checkout->url);
     }
 
     public function complete(): void
@@ -250,18 +336,17 @@ class AgreementPortal extends Component
 
     public function goToPayment(): void
     {
-        $this->step = 'payment';
+        $this->showPaymentModal = true;
+    }
+
+    public function closePaymentModal(): void
+    {
+        $this->showPaymentModal = false;
     }
 
     public function downloadPdf()
     {
-        $version = $this->link->version;
-
-        if ($version->signed_pdf_path) {
-            return app(PdfService::class)->streamSignedPdf($this->link->agreement, $version);
-        }
-
-        return app(PdfService::class)->downloadAgreementPdf($this->link->agreement, $version);
+        return app(PdfService::class)->downloadAgreementPdf($this->link->agreement, $this->link->version);
     }
 
     private function createFullCheckout(StripeService $stripe, $agreement, $version)
@@ -280,7 +365,7 @@ class AgreementPortal extends Component
                 'quantity' => 1,
             ]],
             'success_url' => route('agreement.view', ['token' => $this->link->token]).'?status=success',
-            'cancel_url' => route('agreement.view', ['token' => $this->link->token]),
+            'cancel_url' => route('agreement.view', ['token' => $this->link->token]).'?status=cancelled',
             'client_reference_id' => (string) $agreement->id,
             'metadata' => [
                 'agreement_id' => (string) $agreement->id,
@@ -312,7 +397,7 @@ class AgreementPortal extends Component
                 'quantity' => 1,
             ]],
             'success_url' => route('agreement.view', ['token' => $this->link->token]).'?status=success',
-            'cancel_url' => route('agreement.view', ['token' => $this->link->token]),
+            'cancel_url' => route('agreement.view', ['token' => $this->link->token]).'?status=cancelled',
             'client_reference_id' => (string) $agreement->id,
             'metadata' => [
                 'agreement_id' => (string) $agreement->id,
@@ -342,7 +427,7 @@ class AgreementPortal extends Component
                 'quantity' => 1,
             ]],
             'success_url' => route('agreement.view', ['token' => $this->link->token]).'?status=success',
-            'cancel_url' => route('agreement.view', ['token' => $this->link->token]),
+            'cancel_url' => route('agreement.view', ['token' => $this->link->token]).'?status=cancelled',
             'client_reference_id' => (string) $agreement->id,
             'metadata' => [
                 'agreement_id' => (string) $agreement->id,
@@ -352,6 +437,77 @@ class AgreementPortal extends Component
         ]);
 
         return $session;
+    }
+
+    public function checkPaymentStatus(): void
+    {
+        if (! $this->paymentPending) {
+            return;
+        }
+
+        $agreement = $this->link->agreement->fresh();
+
+        if ($this->paymentType === 'milestone' && $this->pendingMilestoneId) {
+            $milestone = $agreement->milestones()->find($this->pendingMilestoneId);
+
+            if ($milestone && $milestone->status->value === 'paid') {
+                $this->paymentPending = false;
+
+                $allMs = $agreement->milestones()->orderBy('order_index')->get();
+                $totalMs = $allMs->count();
+                $paidMs = $allMs->where('status', 'paid')->count();
+                $remaining = $totalMs - $paidMs;
+
+                if ($remaining > 0) {
+                    $this->message = "Milestone {$this->pendingMilestoneIndex} of {$totalMs} paid successfully. {$remaining} milestone".($remaining !== 1 ? 's' : '').' remaining.';
+                    $this->showPaymentModal = true;
+                    $this->error = '';
+                } else {
+                    $this->completionMessage = 'Final milestone paid successfully. Your agreement is now complete.';
+                    $this->step = 'complete';
+                    $this->message = '';
+                    $this->error = '';
+                }
+            }
+
+            return;
+        }
+
+        if ($agreement->isPaid()) {
+            $this->paymentPending = false;
+            $this->completionMessage = $this->buildCompletionMessage($agreement);
+            $this->step = 'complete';
+            $this->message = '';
+            $this->error = '';
+        }
+    }
+
+    private function buildCompletionMessage(\App\Models\Agreement $agreement): string
+    {
+        $type = $agreement->payment_type->value;
+
+        return match ($type) {
+            'subscription' => $this->buildSubscriptionCompletionMessage($agreement),
+            'milestone' => 'Final milestone paid successfully. Your agreement is now complete.',
+            'full' => 'Payment received in full. Your agreement is now complete.',
+            default => 'Your agreement with Mars Station is now complete. You can download a copy of the signed agreement below.',
+        };
+    }
+
+    private function buildSubscriptionCompletionMessage(\App\Models\Agreement $agreement): string
+    {
+        $subscription = $agreement->subscriptions()
+            ->whereIn('status', ['active', 'trialing', 'past_due'])
+            ->latest()
+            ->first();
+
+        if ($subscription && $subscription->current_period_end) {
+            $nextDate = $subscription->current_period_end->format('F j, Y');
+
+            return "Subscription activated successfully. Your next billing date is {$nextDate}.";
+        }
+
+        return 'Subscription activated successfully. Your subscription is now active.';
     }
 
     private function recordAccess(string $status): void

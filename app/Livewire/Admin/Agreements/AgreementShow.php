@@ -34,8 +34,6 @@ class AgreementShow extends Component
     {
         abort_unless($agreement->exists, 404);
 
-        // A freshly mounted agreement page must never inherit an Alpine modal state
-        // from the create/edit page during wire:navigate.
         $this->showPaymentReminderModal = false;
 
         $this->agreement = $agreement->load([
@@ -51,6 +49,10 @@ class AgreementShow extends Component
         ]);
 
         $this->newStatus = $agreement->status->value;
+
+        if (request()->query('send_reminder') === '1' && $agreement->payment_type->value !== 'none') {
+            $this->showPaymentReminderModal = true;
+        }
     }
 
     public function closeModal(string $property): void
@@ -159,7 +161,7 @@ class AgreementShow extends Component
 
         $version = $this->agreement->currentVersion;
 
-        $service->sendAgreement($this->agreement, $link, $version, auth('admin')->user());
+        $service->sendPaymentReminder($this->agreement, $link, $version, auth('admin')->user());
 
         $this->showPaymentReminderModal = false;
 

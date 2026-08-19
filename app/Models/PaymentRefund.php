@@ -17,6 +17,8 @@ class PaymentRefund extends Model
         'currency',
         'status',
         'reason',
+        'failure_code',
+        'failure_message',
         'note',
         'admin_id',
         'otp_request_id',

@@ -1,9 +1,19 @@
 <x-mail.layout :subject="'Your Service Agreement — ' . $agreement->title">
 
-    {{-- Custom icon (document with signature) --}}
-    <x-slot:icon>
-        <span style="color:#7c3aed; font-size:26px; line-height:64px;">📄</span>
-    </x-slot:icon>
+    {{-- Document Icon --}}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+            <td align="center" style="padding-bottom: 20px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="width:64px; height:64px; background:#f3e8ff; border-radius:50%; text-align:center; vertical-align:middle;">
+                            <span style="color:#7c3aed; font-size:28px; line-height:64px;">&#128196;</span>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 
     {{-- ========== TITLE ========== --}}
     <h1 style="margin: 0 0 8px; color: #111827; font-size: 24px; font-weight: 800; text-align: center; line-height: 30px;">

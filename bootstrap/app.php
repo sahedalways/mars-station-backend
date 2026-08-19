@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Session\Middleware\AuthenticateSession::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'stripe/webhook',
+        ]);
+
         $middleware->alias([
             'admin.auth' => AdminAuthenticated::class,
             'admin.guest' => AdminGuest::class,

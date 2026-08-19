@@ -1,7 +1,6 @@
 @props([
     'subject' => null,
     'title' => null,
-    'hideIcon' => false,
 ])
 
 <!DOCTYPE html>
@@ -62,23 +61,6 @@
                     {{-- WHITE CONTENT CARD --}}
                     <tr>
                         <td class="content-padding" style="background:#ffffff; padding:40px 40px 32px; border-radius:0;">
-
-                            {{-- Icon circle --}}
-                            @if (! $hideIcon)
-                                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-                                    <tr>
-                                        <td align="center" style="padding-bottom: 20px;">
-                                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                                                <tr>
-                                                    <td style="width:64px; height:64px; background:#f3e8ff; border-radius:50%; text-align:center; vertical-align:middle;">
-                                                        {!! $icon ?? '<span style="color:#7c3aed; font-size:26px; line-height:64px;">&#128274;</span>' !!}
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </td>
-                                    </tr>
-                                </table>
-                            @endif
 
                             {{ $slot }}
 

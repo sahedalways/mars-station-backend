@@ -42,6 +42,8 @@ class AgreementService
 
             $version = $this->createVersion($agreement, $data, $paymentConfig, $admin);
 
+            $this->syncMilestonesForVersion($agreement, $version, $paymentConfig);
+
             if ($attachment && isset($attachment['path'])) {
                 $agreement->attachments()->create([
                     'version_id' => $version->id,
@@ -193,6 +195,22 @@ class AgreementService
         ], $admin);
     }
 
+    public function sendPaymentReminder(Agreement $agreement, AgreementLink $link, AgreementVersion $version, Admin $admin): void
+    {
+        $this->email->send(
+            new \App\Mail\AgreementReminderMail($agreement, $link),
+            $agreement->client_email,
+            'agreement.reminder',
+            $agreement,
+            $admin
+        );
+
+        $this->logs->record('agreement.payment_reminder', $agreement, [
+            'agreement_number' => $agreement->agreement_number,
+            'version' => $version->version,
+        ], $admin);
+    }
+
     public function createLink(
         Agreement $agreement,
         ?AgreementVersion $version,
@@ -300,7 +318,7 @@ class AgreementService
 
         $admin = $agreement->creator;
 
-        if ($admin) {
+        if ($admin && $admin->email !== $agreement->client_email) {
             $this->email->send(
                 new AgreementSignedMail($agreement, $link, $version),
                 $admin->email,
