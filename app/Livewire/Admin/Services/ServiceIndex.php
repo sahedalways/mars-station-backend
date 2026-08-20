@@ -105,6 +105,11 @@ class ServiceIndex extends Component
         $this->bulletPoints = array_values($this->bulletPoints);
     }
 
+    public function updatedNewProjectImage(): void
+    {
+        $this->processUploadedImages();
+    }
+
     public function processUploadedImages(): void
     {
         if (! $this->newProjectImage) {

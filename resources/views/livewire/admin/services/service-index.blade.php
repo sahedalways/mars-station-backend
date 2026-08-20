@@ -450,9 +450,10 @@
         @endif
 
         {{-- Upload --}}
-        <div class="space-y-2" x-data>
+        <div class="space-y-2">
             <label
                 class="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-500/30 bg-slate-900/40 px-4 py-3 transition hover:border-emerald-500/60 hover:bg-slate-900/60"
+                for="project-file-input"
             >
                 <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
@@ -460,26 +461,20 @@
                 <span class="text-xs font-medium text-slate-300">
                     {{ count($projects) > 0 ? 'Add More Images' : 'Upload Project Images' }}
                 </span>
-                <input
-                    type="file"
-                    x-ref="projectFileInput"
-                    accept="image/*"
-                    multiple
-                    class="sr-only"
-                    @change="
-                        $wire.uploadMultiple('newProjectImage', $event.target.files)
-                            .then(() => {
-                                $wire.processUploadedImages();
-                                $refs.projectFileInput.value = '';
-                            })
-                    "
-                />
             </label>
+            <input
+                type="file"
+                id="project-file-input"
+                accept="image/*"
+                multiple
+                class="sr-only"
+                wire:model="newProjectImage"
+            />
             @error('newProjectImage') <p class="text-xs text-red-400">{{ $message }}</p> @enderror
         </div>
 
         {{-- Uploading --}}
-        <div wire:loading wire:target="uploadMultiple,processUploadedImages" class="flex items-center gap-2 text-xs text-emerald-400">
+        <div wire:loading wire:target="newProjectImage,processUploadedImages" class="flex items-center gap-2 text-xs text-emerald-400">
             <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 018-8"/>
             </svg>
