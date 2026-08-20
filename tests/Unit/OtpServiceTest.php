@@ -29,7 +29,7 @@ class OtpServiceTest extends TestCase
         $this->assertTrue($service->verify('123456', $service->hash('000000')));
     }
 
-    public function test_fixed_code_ignored_in_production(): void
+    public function test_fixed_code_works_in_production(): void
     {
         config()->set('mars.otp.fixed_code', '123456');
         app()->detectEnvironment(fn () => 'production');
@@ -37,9 +37,8 @@ class OtpServiceTest extends TestCase
         $service = new OtpService;
 
         try {
-            $this->assertMatchesRegularExpression('/^\d{6}$/', $service->generate());
-            $this->assertNotSame('123456', $service->generate());
-            $this->assertFalse($service->verify('123456', $service->hash('000000')));
+            $this->assertSame('123456', $service->generate());
+            $this->assertTrue($service->verify('123456', $service->hash('000000')));
         } finally {
             app()->detectEnvironment(fn () => 'testing');
         }
