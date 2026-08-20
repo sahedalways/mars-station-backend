@@ -40,10 +40,6 @@ class OtpService
 
     private function fixedCode(): ?string
     {
-        if (app()->environment('production')) {
-            return null;
-        }
-
         $code = config('mars.otp.fixed_code');
 
         return filled($code) ? (string) $code : null;
