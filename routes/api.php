@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ChatLeadApiController;
 use App\Http\Controllers\Api\ComplaintApiController;
 use App\Http\Controllers\Api\GetServiceApiController;
 use App\Http\Controllers\Api\QueryApiController;
@@ -33,3 +34,6 @@ Route::get('/complaints/{id}', [ComplaintApiController::class, 'show']);
 Route::post('/queries', [QueryApiController::class, 'store']);
 Route::get('/queries', [QueryApiController::class, 'index']);
 Route::get('/queries/{id}', [QueryApiController::class, 'show']);
+
+// Chat Leads - public submit
+Route::post('/leads', [ChatLeadApiController::class, 'store']);
