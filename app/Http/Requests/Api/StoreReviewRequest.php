@@ -20,7 +20,7 @@ class StoreReviewRequest extends FormRequest
             'position' => ['nullable', 'string', 'max:255'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'description' => ['required', 'string', 'max:2000'],
-            'dp' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'dp' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:2048'],
         ];
     }
 
