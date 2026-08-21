@@ -78,7 +78,7 @@ class CreateAgreement extends Component
             'client_mobile' => ['nullable', 'string', 'max:30'],
             'content' => ['required', 'string'],
             'validity_date' => ['nullable', 'date', 'after_or_equal:today'],
-            'payment_type' => ['required', 'in:'.implode(',', AgreementPaymentType::values())],
+            'payment_type' => ['required', 'in:' . implode(',', AgreementPaymentType::values())],
         ];
 
         if ($this->payment_type === AgreementPaymentType::Full->value) {
@@ -150,7 +150,7 @@ class CreateAgreement extends Component
 
         $agreement = $service->create($data, auth('admin')->user(), $attachment);
 
-        $this->dispatch('toast', message: "Agreement {$agreement->agreement_number} created and sent to the client.", type: 'success');
+        // $this->dispatch('toast', message: "Agreement {$agreement->agreement_number} created and sent to the client.", type: 'success');
 
         $redirectUrl = route('admin.agreements.show', $agreement);
 

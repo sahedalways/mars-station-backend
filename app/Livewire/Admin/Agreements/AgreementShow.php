@@ -39,6 +39,8 @@ class AgreementShow extends Component
         abort_unless($agreement->exists, 404);
 
         $this->showPaymentReminderModal = false;
+        $this->showVersionPreviewModal = false;
+        $this->previewVersionId = null;
 
         $this->agreement = $agreement->load([
             'versions' => fn ($q) => $q->latest('version'),
