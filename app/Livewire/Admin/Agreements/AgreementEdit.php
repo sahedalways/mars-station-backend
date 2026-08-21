@@ -82,7 +82,7 @@ class AgreementEdit extends Component
         }
 
         if ($agreement->payment_type === AgreementPaymentType::Milestone) {
-            $this->milestones = collect($config['milestones'] ?? [])->map(fn ($m) => [
+            $this->milestones = collect($config['milestones'] ?? [])->map(fn($m) => [
                 'title' => $m['title'],
                 'description' => $m['description'] ?? '',
                 'amount' => Money::fromPence($m['amount_pence'] ?? 0),
@@ -183,7 +183,7 @@ class AgreementEdit extends Component
 
         $redirectUrl = route('admin.agreements.show', $this->agreement);
 
-        $this->redirect($redirectUrl, navigate: true);
+        $this->redirect($redirectUrl);
     }
 
     private function buildData(): array
@@ -204,7 +204,7 @@ class AgreementEdit extends Component
         }
 
         if ($this->payment_type === AgreementPaymentType::Milestone->value) {
-            $data['milestones'] = collect($this->milestones)->map(fn ($m) => [
+            $data['milestones'] = collect($this->milestones)->map(fn($m) => [
                 'title' => $m['title'],
                 'description' => $m['description'] ?? null,
                 'amount_pence' => Money::toPence($m['amount']),
@@ -224,6 +224,6 @@ class AgreementEdit extends Component
     {
         return view('livewire.admin.agreements.agreement-edit', [
             'isSigned' => $this->agreement->hasSignature(),
-        ])->title('Edit '.$this->agreement->agreement_number);
+        ])->title('Edit ' . $this->agreement->agreement_number);
     }
 }
