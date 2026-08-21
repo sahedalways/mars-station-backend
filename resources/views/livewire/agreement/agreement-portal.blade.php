@@ -668,9 +668,13 @@
                                 <span wire:loading.remove wire:target="closePaymentModal">Cancel</span>
                                 <span wire:loading wire:target="closePaymentModal" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg></span>
                             </button>
-                            <button type="button" wire:click="payNow" wire:loading.attr="disabled" wire:target="payNow" {{ $paymentPending ? 'disabled' : '' }} class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-16 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
-                                <span wire:loading.remove wire:target="payNow">Pay Now</span>
-                                <span wire:loading wire:target="payNow" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
+                            <button type="button"
+                                x-data="{ paying: false }"
+                                :disabled="paying || {{ $paymentPending ? 'true' : 'false' }}"
+                                x-on:click="if (! paying) { paying = true; $wire.payNow().finally(() => paying = false) }"
+                                class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-16 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span x-show="! paying">Pay Now</span>
+                                <span x-cloak x-show="paying" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
                             </button>
                         </div>
                     @elseif ($payType === 'subscription')
@@ -684,9 +688,13 @@
                                 <span wire:loading.remove wire:target="closePaymentModal">Cancel</span>
                                 <span wire:loading wire:target="closePaymentModal" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg></span>
                             </button>
-                            <button type="button" wire:click="payNow" wire:loading.attr="disabled" wire:target="payNow" {{ $paymentPending ? 'disabled' : '' }} class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-16 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
-                                <span wire:loading.remove wire:target="payNow">Subscribe</span>
-                                <span wire:loading wire:target="payNow" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
+                            <button type="button"
+                                x-data="{ paying: false }"
+                                :disabled="paying || {{ $paymentPending ? 'true' : 'false' }}"
+                                x-on:click="if (! paying) { paying = true; $wire.payNow().finally(() => paying = false) }"
+                                class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-16 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span x-show="! paying">Subscribe</span>
+                                <span x-cloak x-show="paying" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
                             </button>
                         </div>
                     @else
@@ -700,9 +708,13 @@
                                 <span wire:loading.remove wire:target="closePaymentModal">Cancel</span>
                                 <span wire:loading wire:target="closePaymentModal" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg></span>
                             </button>
-                            <button type="button" wire:click="payNow" wire:loading.attr="disabled" wire:target="payNow" {{ $paymentPending ? 'disabled' : '' }} class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-16 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
-                                <span wire:loading.remove wire:target="payNow">Pay Now</span>
-                                <span wire:loading wire:target="payNow" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
+                            <button type="button"
+                                x-data="{ paying: false }"
+                                :disabled="paying || {{ $paymentPending ? 'true' : 'false' }}"
+                                x-on:click="if (! paying) { paying = true; $wire.payNow().finally(() => paying = false) }"
+                                class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-indigo-600 px-16 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span x-show="! paying">Pay Now</span>
+                                <span x-cloak x-show="paying" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
                             </button>
                         </div>
                     @endif
@@ -781,9 +793,13 @@
                                     <span wire:loading.remove wire:target="goToView">Cancel</span>
                                     <span wire:loading wire:target="goToView" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
                                 </button>
-                                <button type="button" wire:click="sign" wire:loading.attr="disabled" wire:target="sign" class="inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-indigo-600 px-8 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
-                                    <span wire:loading.remove wire:target="sign">Sign &amp; Continue</span>
-                                    <span wire:loading wire:target="sign" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
+                                <button type="button"
+                                    x-data="{ signing: false }"
+                                    :disabled="signing"
+                                    x-on:click="if (! signing) { signing = true; $wire.sign().finally(() => signing = false) }"
+                                    class="inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-indigo-600 px-8 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:ring-indigo-600 disabled:cursor-not-allowed disabled:opacity-60">
+                                    <span x-show="! signing">Sign &amp; Continue</span>
+                                    <span x-cloak x-show="signing" class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg><span class="sr-only">Loading</span></span>
                                 </button>
                             </div>
                         </div>
