@@ -99,6 +99,7 @@ class AgreementShow extends Component
         $service->changeStatus($this->agreement, $status, auth('admin')->user());
         $this->showStatusModal = false;
         $this->showVersionPreviewModal = false;
+        $this->previewVersionId = null;
 
         $this->dispatch('toast', message: "Status updated to {$status->label()}.", type: 'success');
     }
@@ -108,6 +109,7 @@ class AgreementShow extends Component
         $service->archive($this->agreement, auth('admin')->user());
         $this->showArchiveModal = false;
         $this->showVersionPreviewModal = false;
+        $this->previewVersionId = null;
 
         $this->dispatch('toast', message: 'Agreement archived.', type: 'success');
     }
@@ -121,6 +123,7 @@ class AgreementShow extends Component
 
         $this->showTerminateModal = false;
         $this->showVersionPreviewModal = false;
+        $this->previewVersionId = null;
 
         $this->dispatch('toast', message: 'Agreement terminated. Client link disabled.', type: 'success');
     }
@@ -137,6 +140,7 @@ class AgreementShow extends Component
 
         $this->showLinkRegenModal = false;
         $this->showVersionPreviewModal = false;
+        $this->previewVersionId = null;
         $this->agreement->refresh();
 
         $this->dispatch('toast', message: 'A new secure link was generated. The old link is now invalid.', type: 'success');
@@ -154,6 +158,7 @@ class AgreementShow extends Component
 
         $this->showOtpToggleModal = false;
         $this->showVersionPreviewModal = false;
+        $this->previewVersionId = null;
         $this->agreement->refresh();
 
         $this->dispatch('toast', message: $link->otp_enabled ? 'Email OTP protection enabled.' : 'Email OTP protection disabled.', type: 'success');
@@ -173,6 +178,7 @@ class AgreementShow extends Component
 
         $this->showResendModal = false;
         $this->showVersionPreviewModal = false;
+        $this->previewVersionId = null;
 
         $this->dispatch('toast', message: 'Agreement email resent.', type: 'success');
     }
@@ -191,6 +197,7 @@ class AgreementShow extends Component
 
         $this->showPaymentReminderModal = false;
         $this->showVersionPreviewModal = false;
+        $this->previewVersionId = null;
 
         $this->dispatch('toast', message: 'Payment reminder sent to ' . $this->agreement->client_email . '.', type: 'success');
     }
