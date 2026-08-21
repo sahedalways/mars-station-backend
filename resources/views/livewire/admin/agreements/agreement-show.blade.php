@@ -376,16 +376,16 @@
                         <tbody class="divide-y divide-white/5">
                             @forelse ($agreement->versions as $version)
                                 <tr class="transition hover:bg-white/[0.02]">
-                                    <td class="py-3 font-semibold {{ $loop->first ? 'text-purple-300' : 'text-slate-300' }}">
-                                        V{{ $version->version }}{{ $loop->first ? ' (Current)' : '' }}
+                                    <td class="py-3 font-semibold {{ $loop->last ? 'text-purple-300' : 'text-slate-300' }}">
+                                        V{{ $version->version }}{{ $loop->last ? ' (Current)' : '' }}
                                     </td>
                                     <td class="py-3 text-xs text-slate-300">{{ $version->created_at->format('M d, Y h:i A') }}</td>
                                     <td class="py-3 text-xs text-slate-300">{{ $version->admin?->name ?? 'System' }}</td>
                                     <td class="py-3">
-                                        @if ($loop->first)
+                                        @if ($loop->last)
                                             <span class="inline-flex items-center rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 ring-1 ring-inset ring-emerald-500/30">Current</span>
                                         @else
-                                            <span class="inline-flex items-center rounded-md bg-slate-500/15 px-2 py-0.5 text-[10px] font-semibold text-slate-400 ring-1 ring-inset ring-slate-500/30">Archived</span>
+                                            <span class="inline-flex items-center rounded-md bg-slate-500/15 px-2 py-0.5 text-[10px] font-semibold text-slate-400 ring-1 ring-inset ring-slate-500/30">Old</span>
                                         @endif
                                     </td>
                                     <td class="py-3">

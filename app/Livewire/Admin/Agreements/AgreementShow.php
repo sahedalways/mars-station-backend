@@ -43,7 +43,7 @@ class AgreementShow extends Component
         $this->previewVersionId = null;
 
         $this->agreement = $agreement->load([
-            'versions' => fn ($q) => $q->latest('version'),
+            'versions' => fn ($q) => $q->orderBy('version'),
             'currentVersion',
             'links' => fn ($q) => $q->latest('id'),
             'attachments',
