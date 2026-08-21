@@ -19,6 +19,8 @@ class ServiceIndex extends Component
 {
     use WithPagination, WithFileUploads;
 
+    public const MAX_PROJECTS = 3;
+
     public bool $showCreateModal = false;
 
     public bool $showReorderModal = false;
@@ -81,7 +83,9 @@ class ServiceIndex extends Component
         $this->bulletPoints = $service->bulletPoints->pluck('text')->values()->all();
         $this->projects = $service->projects
             ->map(fn ($p) => [
-                'title' => $p->title,
+                'title'      => $p->title,
+                'type'       => $p->type,
+                'view_link'  => $p->view_link,
                 'picture_path' => $p->picture_path,
             ])
             ->values()
@@ -119,6 +123,11 @@ class ServiceIndex extends Component
         $files = Arr::wrap($this->newProjectImage);
 
         foreach ($files as $file) {
+            if (count($this->projects) >= self::MAX_PROJECTS) {
+                $this->dispatch('toast', message: 'Maximum ' . self::MAX_PROJECTS . ' projects per service.', type: 'error');
+                break;
+            }
+
             if (! $file instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
                 continue;
             }
@@ -131,7 +140,9 @@ class ServiceIndex extends Component
             }
 
             $this->projects[] = [
-                'title' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+                'title'        => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+                'type'         => '',
+                'view_link'    => '',
                 'picture_path' => $path,
             ];
         }
@@ -190,9 +201,13 @@ class ServiceIndex extends Component
     public function save(ActivityLogService $logs): void
     {
         $this->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
+            'title'                => ['required', 'string', 'max:255'],
+            'type'                 => ['required', 'string', 'max:255'],
+            'description'          => ['required', 'string'],
+            'projects'             => ['array', 'max:' . self::MAX_PROJECTS],
+            'projects.*.title'     => ['required', 'string', 'max:255'],
+            'projects.*.type'      => ['nullable', 'string', 'max:255'],
+            'projects.*.view_link' => ['nullable', 'string', 'max:2048'],
         ]);
 
         // Ensure every project entry has a picture_path set by processUploadedImages.
@@ -241,10 +256,12 @@ class ServiceIndex extends Component
 
                     foreach ($this->projects as $i => $project) {
                         ServiceProject::create([
-                            'service_id' => $service->id,
-                            'title' => $project['title'],
+                            'service_id'   => $service->id,
+                            'title'        => $project['title'],
+                            'type'         => $project['type'] ?? null,
+                            'view_link'    => $project['view_link'] ?? null,
                             'picture_path' => $project['picture_path'],
-                            'order_index' => $i + 1,
+                            'order_index'  => $i + 1,
                         ]);
                     }
 
@@ -276,10 +293,12 @@ class ServiceIndex extends Component
 
                     foreach ($this->projects as $i => $project) {
                         ServiceProject::create([
-                            'service_id' => $service->id,
-                            'title' => $project['title'],
+                            'service_id'   => $service->id,
+                            'title'        => $project['title'],
+                            'type'         => $project['type'] ?? null,
+                            'view_link'    => $project['view_link'] ?? null,
                             'picture_path' => $project['picture_path'],
-                            'order_index' => $i + 1,
+                            'order_index'  => $i + 1,
                         ]);
                     }
 

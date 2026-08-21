@@ -30,6 +30,10 @@ class AgreementShow extends Component
 
     public bool $showPaymentReminderModal = false;
 
+    public bool $showVersionPreviewModal = false;
+
+    public ?int $previewVersionId = null;
+
     public function mount(Agreement $agreement): void
     {
         abort_unless($agreement->exists, 404);
@@ -58,6 +62,22 @@ class AgreementShow extends Component
     public function closeModal(string $property): void
     {
         $this->$property = false;
+    }
+
+    public function previewVersion(int $versionId): void
+    {
+        $version = $this->agreement->versions()->where('id', $versionId)->first();
+
+        if ($version) {
+            $this->previewVersionId = $version->id;
+            $this->showVersionPreviewModal = true;
+        }
+    }
+
+    public function closeVersionPreviewModal(): void
+    {
+        $this->showVersionPreviewModal = false;
+        $this->previewVersionId = null;
     }
 
     public function openStatusModal(): void
@@ -181,10 +201,26 @@ class AgreementShow extends Component
         return $pdf->downloadAgreementPdf($this->agreement, $version);
     }
 
+    public function downloadVersion(PdfService $pdf, int $versionId)
+    {
+        $version = $this->agreement->versions()->where('id', $versionId)->first();
+
+        if (! $version) {
+            $this->dispatch('toast', message: 'Version not found.', type: 'error');
+
+            return;
+        }
+
+        return $pdf->downloadAgreementPdf($this->agreement, $version);
+    }
+
     public function render()
     {
         return view('livewire.admin.agreements.agreement-show', [
             'statuses' => AgreementStatus::cases(),
+            'previewVersion' => $this->previewVersionId
+                ? $this->agreement->versions()->where('id', $this->previewVersionId)->first()
+                : null,
         ])->title($this->agreement->agreement_number);
     }
 }

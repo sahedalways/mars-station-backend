@@ -370,6 +370,7 @@
                                 <th class="pb-3 pt-1 font-medium">Changed Date / Time</th>
                                 <th class="pb-3 pt-1 font-medium">Changed By</th>
                                 <th class="pb-3 pt-1 font-medium">Status</th>
+                                <th class="pb-3 pt-1 font-medium">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5">
@@ -387,9 +388,18 @@
                                             <span class="inline-flex items-center rounded-md bg-slate-500/15 px-2 py-0.5 text-[10px] font-semibold text-slate-400 ring-1 ring-inset ring-slate-500/30">Archived</span>
                                         @endif
                                     </td>
+                                    <td class="py-3">
+                                        <button type="button" wire:click="previewVersion({{ $version->id }})"
+                                                class="inline-flex items-center justify-center rounded-lg p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-purple-300"
+                                                title="Preview version V{{ $version->version }}">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.75-.75 1.982-.827 3.09-.198l5.504 5.504c1.108 1.108.17 2.927-.874 2.927H8.75a.75.75 0 010-1.5h3.642l-5.504-5.504c-.42-.42-.66-.975-.66-1.554V12z"/>
+                                            </svg>
+                                        </button>
+                                    </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4" class="py-4 text-sm text-slate-500">No versions.</td></tr>
+                                <tr><td colspan="5" class="py-4 text-sm text-slate-500">No versions.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -1060,5 +1070,117 @@
             <x-button type="button" variant="secondary" @click="open = false" wire:click="closeModal('showPaymentReminderModal')">Cancel</x-button>
             <x-button type="button" wire:click="sendPaymentReminder" wire:loading.attr="disabled" wire:target="sendPaymentReminder">Send Reminder</x-button>
         </x-slot:footer>
+    </x-modal>
+
+    {{-- Version Preview Modal --}}
+    <x-modal :show="'showVersionPreviewModal'" max-width="4xl" class="p-0" style="z-index: 9999;">
+        <div id="agreement-preview-wrap" class="ap-scope" x-data="{ expanded: false }"
+             style="overflow-y: auto; max-height: 90vh; background: #fff;">
+            <style>
+                .ap-scope { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111827; line-height: 1.6; }
+                .ap-scope .ap-doc-wrapper { max-width: 900px; margin: 0 auto; background: #fff; box-shadow: 0 0 0 1px #e5e7eb; }
+                .ap-scope .ap-header { display: flex; flex-wrap: wrap; gap: 32px; padding: 28px 40px 20px; background: linear-gradient(135deg, #fafafa 0%, #f3f4f6 100%); border-bottom: 1px solid #e5e7eb; position: relative; }
+                .ap-scope .ap-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #7c3aed, #a855f7, #7c3aed); }
+                .ap-scope .ap-brand { flex: 0 0 220px; }
+                .ap-scope .ap-brand img { max-width: 100%; height: auto; filter: drop-shadow(0 2px 8px rgba(76,29,149,0.15)); }
+                .ap-scope .ap-meta { flex: 1; min-width: 0; max-width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 32px; }
+                .ap-scope .ap-meta-row { display: flex; gap: 10px; align-items: flex-start; }
+                .ap-scope .ap-meta-icon { width: 30px; height: 30px; background: linear-gradient(135deg, #ede9fe, #ddd6fe); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #4c1d95; box-shadow: 0 1px 3px rgba(76,29,149,0.1); }
+                .ap-scope .ap-meta-icon svg { width: 14px; height: 14px; }
+                .ap-scope .ap-meta-label { font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
+                .ap-scope .ap-meta-value { font-size: 12px; color: #111827; font-weight: 600; }
+                .ap-scope .ap-status { display: inline-flex; align-items: center; gap: 4px; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+                .ap-scope .ap-status-signed { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534; border: 1px solid #86efac; box-shadow: 0 1px 3px rgba(22,101,52,0.1); }
+                .ap-scope .ap-status-pending { background: linear-gradient(135deg, #fef9c3, #fde68a); color: #854d0e; border: 1px solid #fcd34d; box-shadow: 0 1px 3px rgba(133,77,14,0.1); }
+                .ap-scope .ap-status-expired { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; border: 1px solid #fca5a5; box-shadow: 0 1px 3px rgba(153,27,27,0.1); }
+                .ap-scope .ap-status-default { background: linear-gradient(135deg, #f3f4f6, #e5e7eb); color: #374151; border: 1px solid #d1d5db; }
+                .ap-scope .ap-body { padding: 36px 40px 0; }
+                .ap-scope .ap-section-label { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: #4c1d95; font-weight: 800; border-left: 4px solid #4c1d95; padding-left: 12px; margin: 32px 0 14px; font-family: 'Inter', sans-serif; }
+                .ap-scope .ap-intro { font-size: 13px; line-height: 1.75; color: #374151; margin: 0 0 8px; }
+                .ap-scope .ap-sub-intro { font-size: 12px; color: #6b7280; font-style: italic; margin: 0 0 20px; }
+                .ap-scope .ap-block { margin-bottom: 22px; }
+                .ap-scope .ap-block h3 { font-size: 12px; color: #4c1d95; font-weight: 800; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; letter-spacing: 0.3px; }
+                .ap-scope .ap-block h3 .num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; background: linear-gradient(135deg, #7c3aed, #4c1d95); color: #fff; border-radius: 6px; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+                .ap-scope .ap-block p { font-size: 13px; line-height: 1.75; color: #374151; margin: 0; }
+                .ap-scope .ap-content-area { font-size: 13px; line-height: 1.75; color: #111827; }
+                .ap-scope .ap-content-area h1, .ap-scope .ap-content-area h2, .ap-scope .ap-content-area h3 { color: #111827; }
+                .ap-scope .ap-content-area p { margin: 0 0 6px; }
+                .ap-scope .ap-content-area td, .ap-scope .ap-content-area th, .ap-scope .ap-content-area span, .ap-scope .ap-content-area a, .ap-scope .ap-content-area em, .ap-scope .ap-content-area i { color: #000000 !important; }
+                .ap-scope .ap-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid #e9e5f5; }
+                .ap-scope .ap-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                .ap-scope .ap-table thead { background: linear-gradient(135deg, #f5f3ff, #ede9fe); }
+                .ap-scope .ap-table th { padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #4c1d95; border-bottom: 2px solid #e9e5f5; }
+                .ap-scope .ap-table td { padding: 12px 16px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+                .ap-scope .ap-table tbody tr:last-child td { border-bottom: none; }
+                .ap-scope .ap-acceptance { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #f5f3ff 100%); border: 2px solid #c4b5fd; border-radius: 14px; padding: 28px 32px; margin: 28px 40px 0; display: flex; gap: 24px; align-items: flex-start; box-shadow: 0 4px 16px rgba(76,29,149,0.08), inset 0 2px 12px rgba(76,29,149,0.04); position: relative; overflow: hidden; }
+                .ap-scope .ap-acceptance::before { content: ''; position: absolute; top: 50%; right: 20px; transform: translateY(-50%); width: 180px; height: 180px; background: url('{{ asset("watermark-logo.png") }}') no-repeat center center; background-size: contain; opacity: 0.07; pointer-events: none; }
+                .ap-scope .ap-acceptance > * { position: relative; z-index: 1; }
+                .ap-scope .ap-acceptance-icon { width: 56px; height: 56px; background: linear-gradient(135deg, #7c3aed, #4c1d95); border: none; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; box-shadow: 0 6px 20px rgba(76,29,149,0.3); }
+                .ap-scope .ap-acceptance-icon svg { width: 26px; height: 26px; }
+                .ap-scope .ap-acceptance h4 { font-size: 15px; color: #1e1b4b; margin: 0 0 14px; font-weight: 800; letter-spacing: 0.8px; }
+                .ap-scope .ap-sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 28px; }
+                .ap-scope .ap-sig-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; margin-bottom: 2px; }
+                .ap-scope .ap-sig-value { font-size: 12px; color: #111827; font-weight: 600; }
+                .ap-scope .ap-sig-note { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #c4b5fd; font-size: 10.5px; color: #4c1d95; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+                .ap-scope .ap-footer { background: linear-gradient(180deg, #1e1b4b 0%, #0f0524 100%); color: #fff; padding: 0; margin-top: 32px; position: relative; overflow: hidden; }
+                .ap-scope .ap-footer::before { content: ''; position: absolute; top: -30px; right: -30px; width: 180px; height: 180px; background: url('{{ asset("watermark-logo.png") }}') no-repeat center center; background-size: contain; opacity: 0.04; pointer-events: none; }
+                .ap-scope .ap-footer > * { position: relative; z-index: 1; }
+                .ap-scope .ap-footer-inner { padding: 32px 40px 0; }
+                .ap-scope .ap-footer-logo { text-align: center; margin-bottom: 20px; width: 100%; }
+                .ap-scope .ap-footer-logo img { display: block; margin: 0 auto; height: 42px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; }
+                .ap-scope .ap-footer-divider { height: 1px; margin: 0 0 18px; background: linear-gradient(90deg, transparent, rgba(167,139,250,0.25), transparent); }
+                .ap-scope .ap-footer-strip { display: flex; justify-content: center; gap: 28px; flex-wrap: wrap; font-size: 10.5px; color: #c4b5fd; }
+                .ap-scope .ap-footer-strip strong { color: #e9d5ff; font-weight: 700; }
+                .ap-scope .ap-footer-disclaimer { margin-top: 18px; padding: 14px 20px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 9px; color: #8b7fc7; line-height: 1.65; text-align: center; }
+                .ap-scope .ap-footer-bottom { margin-top: 18px; padding: 14px 40px; background: rgba(0,0,0,0.25); display: flex; justify-content: space-between; align-items: center; font-size: 9px; color: #7c6daa; }
+                .ap-scope .ap-footer-bottom a { color: #a78bfa; text-decoration: none; transition: color 0.2s; }
+                .ap-scope .ap-footer-bottom a:hover { color: #c4b5fd; }
+                .ap-scope .ap-footer-links { display: flex; gap: 18px; align-items: center; }
+                .ap-scope .ap-footer-social { display: flex; gap: 10px; align-items: center; }
+                .ap-scope .ap-footer-social a { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 8px; transition: background 0.2s; }
+                .ap-scope .ap-footer-social a:hover { background: rgba(167,139,250,0.25); }
+                .ap-scope .ap-footer-social a svg { width: 14px; height: 14px; }
+                @media (max-width: 640px) {
+                    .ap-scope .ap-header { flex-direction: column; align-items: flex-start; gap: 16px; padding: 20px 20px 18px; }
+                    .ap-scope .ap-brand img { max-width: 180px; }
+                    .ap-scope .ap-meta { grid-template-columns: 1fr; min-width: 0; max-width: 100%; gap: 8px; }
+                    .ap-scope .ap-body { padding: 24px 20px 0; }
+                    .ap-scope .ap-acceptance { flex-direction: column; align-items: center; text-align: center; padding: 20px 18px; margin: 20px 20px 0; gap: 16px; }
+                    .ap-scope .ap-acceptance-icon { width: 44px; height: 44px; }
+                    .ap-scope .ap-acceptance-icon svg { width: 20px; height: 20px; }
+                    .ap-scope .ap-sig-grid { grid-template-columns: 1fr; gap: 8px; }
+                    .ap-scope .ap-footer-inner { padding: 24px 20px 0; }
+                    .ap-scope .ap-footer-strip { flex-direction: column; gap: 8px; text-align: center; }
+                    .ap-scope .ap-footer-bottom { flex-direction: column; gap: 10px; text-align: center; padding: 12px 20px; }
+                    .ap-scope .ap-footer-links { flex-wrap: wrap; justify-content: center; gap: 12px; }
+                    .ap-scope .ap-footer-social { justify-content: center; }
+                }
+            </style>
+
+            @if ($previewVersion)
+            {{-- Header with "Old Version" badge --}}
+            <div class="ap-scope" style="padding: 12px 24px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-bottom: 1px solid #fcd34d; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-300 flex-shrink-0">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                        OLD VERSION — V{{ $previewVersion->version }}
+                    </span>
+                    <span class="text-sm text-amber-800 truncate">This is an archived version ({{ $previewVersion->created_at->format('M d, Y') }}). Current version is V{{ $agreement->currentVersion->version }}.</span>
+                </div>
+                <button type="button" wire:click="downloadVersion({{ $previewVersion->id }})"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/50 bg-purple-500/15 px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-purple-600 hover:border-purple-600 hover:text-white flex-shrink-0"
+                        title="Download PDF">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                    Download PDF
+                </button>
+            </div>
+                @include('partials._agreement-document', ['version' => $previewVersion, 'pdfMode' => false])
+            @else
+                <div class="py-12 text-center text-slate-500">
+                    <svg class="mx-auto h-12 w-12 mb-3" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                    <p class="text-sm">Version not found.</p>
+                </div>
+            @endif
+        </div>
     </x-modal>
 </div>

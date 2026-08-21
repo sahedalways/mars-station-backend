@@ -24,13 +24,13 @@
     x-show="open"
     x-cloak
     @keydown.escape.window="if (open) $wire.closeModal('{{ $show }}')"
-    class="relative z-50"
+    class="relative z-[100]"
     role="dialog"
     aria-modal="true"
 >
-    <div x-show="open" x-transition.opacity class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="$wire.closeModal('{{ $show }}')"></div>
+    <div x-show="open" x-transition.opacity class="fixed inset-0 z-[99] bg-slate-900/50 backdrop-blur-sm" @click="$wire.closeModal('{{ $show }}')"></div>
 
-    <div x-show="open" x-transition class="fixed inset-0 z-10 overflow-y-auto">
+    <div x-show="open" x-transition class="fixed inset-0 z-[100] overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
             <div
                 x-show="open"
