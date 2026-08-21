@@ -148,38 +148,9 @@ class AgreementEdit extends Component
 
         $data = $this->buildData();
 
-        if ($this->agreement->hasSignature()) {
-            $version = $service->createNewVersion($this->agreement, $data, auth('admin')->user());
+        $version = $service->createNewVersion($this->agreement, $data, auth('admin')->user());
 
-            $this->dispatch('toast', message: "New version V{$version->version} created and sent to the client. The signed version is unchanged.", type: 'success');
-        } else {
-            // Unsigned — edit the current (pending) version in place.
-            $version = $this->agreement->versions()->latest('id')->first();
-
-            $version->update([
-                'title' => $data['title'],
-                'client_name' => $data['client_name'],
-                'client_email' => $data['client_email'],
-                'client_mobile' => $data['client_mobile'] ?? null,
-                'validity_date' => $data['validity_date'] ?? null,
-                'content' => $data['content'],
-                'payment_config' => $service->buildPaymentConfig($this->agreement->payment_type, $data),
-            ]);
-
-            $this->agreement->update([
-                'title' => $data['title'],
-                'client_name' => $data['client_name'],
-                'client_email' => $data['client_email'],
-                'client_mobile' => $data['client_mobile'] ?? null,
-                'validity_date' => $data['validity_date'] ?? null,
-            ]);
-
-            $service->syncMilestonesForVersion($this->agreement, $version, $version->payment_config);
-
-            $service->logEdit($this->agreement, auth('admin')->user());
-
-            $this->dispatch('toast', message: 'Agreement updated.', type: 'success');
-        }
+        $this->dispatch('toast', message: "New version V{$version->version} created.", type: 'success');
 
         $redirectUrl = route('admin.agreements.show', $this->agreement);
 
